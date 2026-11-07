@@ -1,0 +1,333 @@
+Checklist trước khi bắt đầu
+1. Chốt phạm vi tính năng — QUAN TRỌNG NHẤT
+
+Đừng để mỗi người tự thêm tính năng.
+
+Mình đề nghị chốt bản MVP:
+
+Bắt buộc:
+
+Login + 3 role: Admin / Operator / Viewer
+Quản lý user
+Đăng ký/kích hoạt/quản lý device
+ESP32 gửi telemetry
+Dashboard realtime
+Điều khiển đèn/quạt
+Command + ACK
+Online/offline
+Alert
+Automation: phòng trống → tắt đèn/quạt
+History
+Lock/decommission device
+
+Đây bám khá sát proposal hiện tại và tiêu chí thành công của nhóm.
+
+AI, OTA... để sau, không được để những thứ này làm chậm MVP.
+
+2. Chốt phần cứng thật sự sẽ làm
+
+Đây là chỗ nhóm bạn nên sửa proposal nếu cần, chứ đừng coi proposal hiện tại là bất biến.
+
+Ví dụ hiện tại proposal ghi:
+
+Node A:
+DHT22
+BH1750
+PIR
+MQ-135
+
+Node B:
+Relay
+Servo
+Reed
+Buzzer
+
+Nhưng nhóm bạn hiện có kit chứa DHT11, PIR, LDR, relay...
+
+→ Phải chốt:
+
+Sensor nào THẬT SỰ dùng?
+Actuator nào THẬT SỰ dùng?
+Có làm cửa/servo không?
+Có làm đo năng lượng không?
+Có cần MQ-135 không?
+Có cần BH1750 không?
+
+Không nên mua linh kiện trước khi chốt danh sách này.
+
+3. Chốt kiến trúc
+
+Cả nhóm phải thống nhất đúng một luồng:
+
+ESP32
+   ↓ Wi-Fi
+MQTT Broker
+   ↓
+Spring Boot Backend
+   ↓
+PostgreSQL
+   ↓
+REST API
+   ↓
+Frontend
+
+Và chiều ngược lại:
+
+Frontend
+   ↓ REST
+Backend
+   ↓ MQTT
+ESP32
+   ↓ ACK
+Backend
+   ↓
+Frontend
+
+Proposal hiện tại cũng đang thiết kế theo kiến trúc này.
+
+4. Chốt data contract ← CỰC KỲ QUAN TRỌNG
+
+Đây là thứ cho phép 4 người làm độc lập bằng mock data.
+
+Ví dụ chốt telemetry:
+
+{
+  "deviceId": "ESP32-01",
+  "timestamp": "2026-09-30T15:30:00Z",
+  "temperature": 28.5,
+  "humidity": 72,
+  "light": 650,
+  "presence": true,
+  "door": "CLOSED"
+}
+
+Chốt luôn:
+
+tên field
+kiểu dữ liệu
+đơn vị
+timestamp format
+device ID
+field nào bắt buộc
+field nào optional
+
+Sau đó M1, M2, M3, M4 đều dựa vào đúng format này.
+
+5. Chốt MQTT contract
+
+Cái này đi cùng data contract.
+
+Ví dụ:
+
+office/{deviceId}/telemetry
+office/{deviceId}/status
+office/{deviceId}/command
+office/{deviceId}/ack
+
+Và thống nhất:
+
+Telemetry
+{
+  "deviceId": "ESP32-01",
+  "temperature": 28.5,
+  "humidity": 72
+}
+Command
+{
+  "commandId": "CMD-001",
+  "type": "LIGHT",
+  "action": "ON"
+}
+ACK
+{
+  "commandId": "CMD-001",
+  "status": "SUCCESS"
+}
+
+Ngoài ra chốt:
+
+QoS
+heartbeat
+timeout
+retry
+duplicate command xử lý thế nào
+online/offline thế nào
+
+Đây cũng là những nội dung đề yêu cầu phải mô tả trong thiết kế MQTT.
+
+6. Chốt API contract
+
+Đặc biệt vì bạn có thể làm M2, cái này cực kỳ quan trọng.
+
+Ví dụ:
+
+POST   /api/auth/login
+
+GET    /api/users
+GET    /api/devices
+POST   /api/devices
+GET    /api/devices/{id}/telemetry
+
+POST   /api/devices/{id}/commands
+
+GET    /api/alerts
+PATCH  /api/alerts/{id}/acknowledge
+
+Frontend không cần biết backend bên trong làm thế nào.
+
+Nó chỉ cần biết:
+
+Gọi API này → nhận JSON format này.
+
+Nhờ vậy M4 có thể code frontend bằng mock API trước.
+
+7. Chốt database model
+
+Ít nhất cả nhóm phải thống nhất các entity chính.
+
+Ví dụ:
+
+User
+Device
+Telemetry
+Command
+Alert
+AuditLog
+
+Sau đó thống nhất quan hệ:
+
+User ─── Device
+Device ───< Telemetry
+Device ───< Command
+Device ───< Alert
+User ───< AuditLog
+
+Không cần ngay lập tức thiết kế 30 bảng.
+
+Chỉ cần schema đủ để M2 bắt đầu.
+
+8. Chốt phân công + ranh giới
+
+Bảng hiện tại của nhóm khá ổn:
+
+Người	Chính
+M1	ESP32 + hardware + firmware
+M2	Spring Backend + Auth/RBAC + MQTT + DB
+M3	Telemetry processing + Alert + Automation + AI
+M4	Frontend + realtime + DevOps + Docs
+
+Proposal cũng đang phân chia gần như vậy.
+
+Nhưng cần chốt thêm:
+
+Ai sở hữu cái gì và ai hỗ trợ cái gì?
+
+Ví dụ:
+
+M2 sở hữu
+MQTT Subscriber
+Auth
+RBAC
+Device lifecycle
+Command service
+Database
+REST API
+M3 sở hữu
+Rule engine
+Alert
+Automation
+Energy report
+M4 sở hữu
+Dashboard
+Web UI
+Realtime
+Docker
+Deployment
+M1 sở hữu
+Firmware
+GPIO
+Sensor
+Relay
+MQTT Publisher
+MQTT Command Handler
+9. Chốt cách làm Mock trước
+
+Mình rất khuyến khích nhóm bạn chốt ngay từ đầu rằng development không phụ thuộc hardware thật.
+
+Ví dụ:
+
+             MOCK
+              ↓
+      ┌──────────────┐
+      │ Mock ESP32   │
+      └──────┬───────┘
+             │ MQTT
+             ▼
+        Spring Backend
+             │
+       ┌─────┴─────┐
+       ↓           ↓
+      DB          API
+                   ↓
+                Frontend
+
+M1 chưa xong ESP32 cũng không chặn M2/M3/M4.
+
+Sau này:
+
+Mock ESP32
+    ↓
+   bỏ
+    ↓
+ESP32 thật
+
+Miễn là MQTT contract không đổi.
+
+10. Cuối cùng: chốt "Definition of Done"
+
+Đây là thứ rất nhiều nhóm sinh viên quên.
+
+Ví dụ một tính năng được coi là xong chỉ khi:
+
+Code → test → merge → có documentation → chạy được.
+
+Chứ không phải:
+
+"Em code xong rồi."
+
+Nếu gom lại thành một checklist họp nhóm
+
+Bạn có thể copy nguyên cái này vào nhóm chat:
+
+[ ] 1. Chốt MVP / tính năng chính
+[ ] 2. Chốt sensor + actuator + số ESP32
+[ ] 3. Chốt kiến trúc hệ thống
+[ ] 4. Chốt MQTT topic + payload + ACK
+[ ] 5. Chốt telemetry data format
+[ ] 6. Chốt REST API + JSON response
+[ ] 7. Chốt database entities + quan hệ
+[ ] 8. Chốt role + permission
+[ ] 9. Chốt phân công M1/M2/M3/M4
+[ ] 10. Chốt mock-data để làm song song
+[ ] 11. Chốt Git branching / cách merge
+[ ] 12. Chốt Definition of Done
+Và thứ tự mình khuyên nhóm làm là:
+PHẠM VI
+   ↓
+HARDWARE
+   ↓
+ARCHITECTURE
+   ↓
+MQTT CONTRACT
+   ↓
+DATA CONTRACT
+   ↓
+API CONTRACT
+   ↓
+DATABASE
+   ↓
+PHÂN CÔNG
+   ↓
+MOCK DATA
+   ↓
+BẮT ĐẦU CODE

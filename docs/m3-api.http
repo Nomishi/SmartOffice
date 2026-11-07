@@ -1,0 +1,78 @@
+### M3 backend API — ví dụ gọi tay
+### Dùng với VS Code REST Client hoặc IntelliJ HTTP Client.
+### Backend: http://localhost:8080
+
+@base = http://localhost:8080
+@ctrl = office-ctrl-01
+@env = office-env-01
+
+### Danh sách thiết bị
+GET {{base}}/api/devices
+
+### Trạng thái node điều khiển
+GET {{base}}/api/devices/{{ctrl}}/status
+
+### Trạng thái node môi trường
+GET {{base}}/api/devices/{{env}}/status
+
+### Lịch sử telemetry (đổi thời gian cho đúng)
+GET {{base}}/api/devices/{{env}}/telemetry?from=2026-11-06T00:00:00Z&to=2026-11-07T00:00:00Z&page=0&size=20
+
+### Điện năng theo giờ
+GET {{base}}/api/devices/{{ctrl}}/energy?from=2026-11-06T00:00:00Z&to=2026-11-07T00:00:00Z&bucket=hour
+
+### Bật đèn (202 ngay, ACK cập nhật sau)
+POST {{base}}/api/devices/{{ctrl}}/commands
+Content-Type: application/json
+X-User-Id: 2
+Idempotency-Key: 6f1c2a4e-1111-4c3d-9f00-000000000001
+
+{"target":"light1","action":"ON"}
+
+### Bật quạt và chờ ACK tối đa 10s
+POST {{base}}/api/devices/{{ctrl}}/commands?wait=true
+Content-Type: application/json
+X-User-Id: 2
+
+{"target":"fan1","action":"ON"}
+
+### Mở cửa (timeout 10s thay vì 5s)
+POST {{base}}/api/devices/{{ctrl}}/commands?wait=true
+Content-Type: application/json
+
+{"target":"door1","action":"OPEN"}
+
+### Lịch sử lệnh
+GET {{base}}/api/devices/{{ctrl}}/commands
+
+### Đổi mode sang MANUAL (automation không ghi đè)
+POST {{base}}/api/devices/{{ctrl}}/mode
+Content-Type: application/json
+
+{"mode":"MANUAL"}
+
+### Gửi config retained xuống thiết bị
+PUT {{base}}/api/devices/{{ctrl}}/config
+Content-Type: application/json
+X-User-Id: 2
+
+{"telemetryIntervalSec":5,"servoOpenDeg":90,"servoCloseDeg":0}
+
+### Danh sách cảnh báo đang mở
+GET {{base}}/api/alerts?status=OPEN
+
+### Xác nhận cảnh báo
+PATCH {{base}}/api/alerts/1/acknowledge
+X-User-Id: 2
+
+### Danh sách rule
+GET {{base}}/api/rules
+
+### Sửa ngưỡng nhiệt độ
+PUT {{base}}/api/rules/1
+Content-Type: application/json
+
+{"enabled":true,"params":{"thresholdC":32,"consecutiveSamples":3}}
+
+### Audit log
+GET {{base}}/api/audit-logs

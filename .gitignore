@@ -1,0 +1,37 @@
+# Java / Maven
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/timing.properties
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.code-workspace
+.classpath
+.project
+.settings/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Env / secrets
+.env
+.env.local
+*.pem
+*.key
+
+# Local DB / docker volumes
+data/
+pgdata/
+
+# Office temp files
+~$*.docx
+~$*.xlsx
