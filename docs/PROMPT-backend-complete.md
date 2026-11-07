@@ -2,14 +2,23 @@
 
 Bạn là **senior backend engineer** (Java/Spring Boot, MQTT, PostgreSQL, bảo mật API). Nhiệm vụ:
 hoàn thiện backend của dự án **SmartOffice – Phòng làm việc thông minh IoT** để **frontend (M4) có thể
-tích hợp ngay ngày mai**, và bàn giao bằng một **Pull Request trên nhánh riêng**. Tuyệt đối không
-commit/push trực tiếp lên `main`.
+tích hợp ngay ngày mai**, và bàn giao trên **nhánh riêng**. Tuyệt đối không commit/push/merge vào `main`.
 
 ---
 
 ## 0. LUẬT GIT — BẮT BUỘC
 
 Repo: `https://github.com/Nomishi/SmartOffice`
+
+### Tình trạng code hiện tại (đã push lên remote)
+
+- `main` = `810540b` — chỉ có scaffold ban đầu.
+- `origin/feature/backend-complete` = `4fa9f2b` — **đã chứa toàn bộ code + docs mới nhất**,
+  gồm các commit `810540b` → `7572923` → `4fa9f2b`.
+- Không cần merge `main`; không cần pull code từ `main`. Mọi thứ cần thiết đã nằm trên
+  `feature/backend-complete`.
+
+**Nếu clone repo mới:**
 
 ```bash
 git clone https://github.com/Nomishi/SmartOffice.git
@@ -18,13 +27,26 @@ git checkout feature/backend-complete
 git pull origin feature/backend-complete
 ```
 
+**Nếu máy đã có repo local:**
+
+```bash
+git fetch origin
+git checkout feature/backend-complete
+git pull origin feature/backend-complete
+```
+
+**Nếu đang đứng ở nhánh khác và có thay đổi chưa commit:** commit/stash trước, rồi mới checkout.
+Không chạy `git reset --hard` lên `main`.
+
 Nhánh `feature/backend-complete` **đã tồn tại** và chứa baseline contract v1.3 + docs đã soát.
-Làm tiếp trực tiếp trên nhánh này (hoặc tách nhánh con nếu cần, nhưng PR cuối cùng phải gộp về
+Làm tiếp trực tiếp trên nhánh này (hoặc tách nhánh con nếu cần, nhưng gộp kết quả về
 `feature/backend-complete`, không phải `main`).
+
 - **Không** push thẳng `main`, **không** force push, **không** merge PR.
 - Commit nhỏ, message rõ ràng (`feat:`, `fix:`, `test:`, `docs:`, `chore:`).
-- Kết thúc: push nhánh + mở Pull Request vào `main` (draft cũng được), ghi rõ:
-  tóm tắt, danh sách endpoint mới, cách chạy, bằng chứng test, rủi ro/việc còn lại.
+- Kết thúc: push nhánh và gửi link compare/commit. Nếu cần review, mở **draft PR** vào `main`
+  nhưng **tuyệt đối không merge**; ghi rõ tóm tắt, endpoint mới, cách chạy, bằng chứng test,
+  rủi ro/việc còn lại.
 - Không commit secret, `.env`, `target/`, file build, token, mật khẩu thật.
 - Không xoá/rewrite code đang chạy tốt nếu không cần; ưu tiên thay đổi additive.
 
