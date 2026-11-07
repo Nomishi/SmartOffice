@@ -12,6 +12,23 @@ public class SmartOfficeProperties {
     private Mqtt mqtt = new Mqtt();
     private Rules rules = new Rules();
     private Cors cors = new Cors();
+    private Security security = new Security();
+
+    @Getter
+    @Setter
+    public static class Security {
+        private String jwtSecret = "smartoffice-super-secret-dev-jwt-key-minimum-256-bits-length-required-for-hs256!";
+        private long jwtExpirationSeconds = 3600;
+        private UserSeed seed = new UserSeed();
+
+        @Getter
+        @Setter
+        public static class UserSeed {
+            private String adminPassword = "adminPassword123!";
+            private String operatorPassword = "operatorPassword123!";
+            private String viewerPassword = "viewerPassword123!";
+        }
+    }
 
     @Getter
     @Setter

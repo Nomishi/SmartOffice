@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -42,6 +43,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadRequest(Exception ex) {
         return ResponseEntity.badRequest()
                 .body(ErrorResponse.of("VALIDATION_ERROR", ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ErrorResponse.of("FORBIDDEN", "Không có quyền thực hiện thao tác này", null));
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

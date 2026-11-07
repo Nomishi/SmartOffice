@@ -41,10 +41,10 @@ public class AlertController {
     }
 
     @PatchMapping("/{id}/acknowledge")
-    public Map<String, Object> acknowledge(
-            @PathVariable Long id,
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
-        Alert alert = alertService.acknowledge(id, userId);
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
+    public Map<String, Object> acknowledge(@PathVariable Long id) {
+        Long userId = com.smartoffice.backend.security.SecurityUtils.getCurrentUserId();
+        Alert alert = alertService.acknowledge(id, userId != null ? userId : 0L);
         return Map.of(
                 "alertId", alert.getAlertId(),
                 "status", alert.getStatus(),

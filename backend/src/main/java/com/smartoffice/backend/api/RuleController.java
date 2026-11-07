@@ -28,6 +28,7 @@ public class RuleController {
     }
 
     @PutMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     public RuleDto update(@PathVariable Long id, @RequestBody RuleUpdateRequest request) {
         return ruleService.update(id, request);
     }

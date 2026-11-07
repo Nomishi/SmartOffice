@@ -18,6 +18,7 @@ public class AuditLogController {
     private final AuditLogRepository auditLogRepository;
 
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public PageResponse<AuditLog> list(@RequestParam(defaultValue = "0") int page,
                                        @RequestParam(defaultValue = "20") int size) {
         return PageResponse.of(auditLogRepository.findAllByOrderByTimestampDesc(
