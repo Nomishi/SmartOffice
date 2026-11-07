@@ -23,7 +23,7 @@ services:
     container_name: smartoffice-mosquitto
     restart: unless-stopped
     ports:
-      - "1883:1883"
+      - "${MOSQUITTO_PORT:-1883}:1883"
       - "9001:9001"
     volumes:
       - ./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
@@ -52,6 +52,7 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-smartoffice}
       MQTT_BROKER_URL: tcp://mosquitto:1883
       MQTT_ENABLED: ${MQTT_ENABLED:-true}
+      SEED_DEV_USERS: ${SEED_DEV_USERS:-true}
       JWT_SECRET: ${JWT_SECRET:-smartoffice-super-secret-dev-jwt-key-minimum-256-bits-length-required-for-hs256!}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-adminPassword123!}
       OPERATOR_PASSWORD: ${OPERATOR_PASSWORD:-operatorPassword123!}

@@ -9,11 +9,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,8 @@ public class DataSeeder implements ApplicationRunner {
     private final SmartOfficeProperties properties;
     private final ObjectMapper objectMapper;
 
+    private final Environment environment;
+
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
@@ -43,6 +47,16 @@ public class DataSeeder implements ApplicationRunner {
         if (userRepository.count() > 0) {
             return;
         }
+        boolean isDevProfile = Arrays.asList(environment.getActiveProfiles()).contains("dev");
+        String envSeed = environment.getProperty("SEED_DEV_USERS");
+        boolean seedEnabled = properties.getSecurity().isSeedDevUsers()
+                || "true".equalsIgnoreCase(envSeed)
+                || isDevProfile;
+        if (!seedEnabled) {
+            log.info("Bỏ qua seed dev users (chỉ seed khi profile=dev hoặc SEED_DEV_USERS=true)");
+            return;
+        }
+
         var seedProps = properties.getSecurity().getSeed();
         log.warn("Seeding default dev users: admin, operator1, viewer1 (DEV ONLY)");
 

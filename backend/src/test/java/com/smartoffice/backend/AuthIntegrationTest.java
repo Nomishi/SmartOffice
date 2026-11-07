@@ -114,5 +114,52 @@ class AuthIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items").isArray());
     }
+
+    @Test
+    void realJwtTokensValidateRoles() throws Exception {
+        // 1. Login lấy real token của viewer1
+        LoginRequest viewerLogin = new LoginRequest("viewer1", "viewerPassword123!");
+        String viewerRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(viewerLogin)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String viewerToken = objectMapper.readTree(viewerRes).get("token").asText();
+
+        // 2. Viewer dùng real token đọc devices -> OK
+        mockMvc.perform(get("/api/devices")
+                        .header("Authorization", "Bearer " + viewerToken))
+                .andExpect(status().isOk());
+
+        // 3. Viewer dùng real token gửi command -> 403 FORBIDDEN
+        CommandRequest cmd = new CommandRequest("light1", "ON");
+        mockMvc.perform(post("/api/devices/office-ctrl-01/commands")
+                        .header("Authorization", "Bearer " + viewerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(cmd)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
+
+        // 4. Login lấy real token của operator1
+        LoginRequest opLogin = new LoginRequest("operator1", "operatorPassword123!");
+        String opRes = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(opLogin)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String opToken = objectMapper.readTree(opRes).get("token").asText();
+
+        // 5. Operator dùng real token gửi command -> qua được Auth/RBAC (trả 409 DEVICE_OFFLINE vì device dev offline)
+        mockMvc.perform(post("/api/devices/office-ctrl-01/commands")
+                        .header("Authorization", "Bearer " + opToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(cmd)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("DEVICE_OFFLINE"));
+
+        // 6. Header param ?token= bị từ chối với API thông thường (chỉ chấp nhận Bearer)
+        mockMvc.perform(get("/api/devices?token=" + viewerToken))
+                .andExpect(status().isUnauthorized());
+    }
 }
 

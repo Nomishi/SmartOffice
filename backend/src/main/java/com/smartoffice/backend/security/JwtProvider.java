@@ -25,14 +25,15 @@ public class JwtProvider {
 
     @PostConstruct
     public void init() {
-        byte[] keyBytes = properties.getSecurity().getJwtSecret().getBytes(StandardCharsets.UTF_8);
-        if (keyBytes.length < 32) {
-            byte[] padded = new byte[32];
-            System.arraycopy(keyBytes, 0, padded, 0, Math.min(keyBytes.length, 32));
-            this.key = Keys.hmacShaKeyFor(padded);
-        } else {
-            this.key = Keys.hmacShaKeyFor(keyBytes);
+        String secret = properties.getSecurity().getJwtSecret();
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("JWT_SECRET không được để trống!");
         }
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException("JWT_SECRET phải có độ dài tối thiểu 32 ký tự (256-bit) cho HS256!");
+        }
+        this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String generateToken(User user) {

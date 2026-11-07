@@ -65,9 +65,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
         }
-        String paramToken = request.getParameter("token");
-        if (StringUtils.hasText(paramToken)) {
-            return paramToken;
+        // Chỉ chấp nhận ?token= cho endpoint /api/stream (EventSource browser không set được header)
+        if (request.getRequestURI().startsWith("/api/stream")) {
+            String paramToken = request.getParameter("token");
+            if (StringUtils.hasText(paramToken)) {
+                return paramToken;
+            }
         }
         return null;
     }

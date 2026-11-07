@@ -31,7 +31,12 @@ CREATE TABLE IF NOT EXISTS devices (
     empty_since TIMESTAMP WITH TIME ZONE,
     door_open_since TIMESTAMP WITH TIME ZONE,
     invalid_streak INTEGER NOT NULL DEFAULT 0,
-    valid_streak INTEGER NOT NULL DEFAULT 0
+    valid_streak INTEGER NOT NULL DEFAULT 0,
+    temp_high_streak INTEGER NOT NULL DEFAULT 0,
+    air_bad_streak INTEGER NOT NULL DEFAULT 0,
+    last_absence_action_at TIMESTAMP WITH TIME ZONE,
+    last_energy_action_at TIMESTAMP WITH TIME ZONE,
+    version BIGINT DEFAULT 0
 );
 
 -- 3. Telemetry (Node A)

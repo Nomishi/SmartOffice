@@ -67,18 +67,20 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         String allowed = properties.getCors().getAllowedOrigins();
-        if (allowed != null && !allowed.isBlank()) {
+        if (allowed != null && !allowed.isBlank() && !allowed.equals("*")) {
             config.setAllowedOrigins(Arrays.stream(allowed.split(","))
                     .map(String::trim)
                     .filter(s -> !s.isEmpty())
                     .toList());
+            config.setAllowCredentials(true);
         } else {
-            config.setAllowedOrigins(List.of("*"));
+            // Khi cho phép mọi origin hoặc chưa cấu hình cụ thể: dùng allowedOriginPatterns và KHÔNG bật credentials nếu "*"
+            config.setAllowedOriginPatterns(List.of("*"));
+            config.setAllowCredentials(false);
         }
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization", "Idempotency-Key"));
-        config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

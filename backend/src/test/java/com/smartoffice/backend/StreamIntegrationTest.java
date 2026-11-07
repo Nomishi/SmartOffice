@@ -26,6 +26,9 @@ class StreamIntegrationTest {
     @Autowired
     private RealtimeService realtimeService;
 
+    @Autowired
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
     @Test
     void unauthenticatedSseReturns401() throws Exception {
         mockMvc.perform(get("/api/stream"))
@@ -42,6 +45,25 @@ class StreamIntegrationTest {
 
         assertNotNull(result);
         assertTrue(realtimeService.getActiveSubscriberCount() > 0);
+    }
+
+    @Test
+    void connectToStreamWithRealTokenQueryParam() throws Exception {
+        com.smartoffice.backend.api.dto.LoginRequest req =
+                new com.smartoffice.backend.api.dto.LoginRequest("operator1", "operatorPassword123!");
+        String loginRes = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/auth/login")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String token = objectMapper.readTree(loginRes).get("token").asText();
+
+        MvcResult result = mockMvc.perform(get("/api/stream").queryParam("token", token))
+                .andExpect(status().isOk())
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        assertNotNull(result);
     }
 }
 

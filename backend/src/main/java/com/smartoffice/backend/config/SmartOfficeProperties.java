@@ -17,8 +17,9 @@ public class SmartOfficeProperties {
     @Getter
     @Setter
     public static class Security {
-        private String jwtSecret = "smartoffice-super-secret-dev-jwt-key-minimum-256-bits-length-required-for-hs256!";
+        private String jwtSecret = "";
         private long jwtExpirationSeconds = 3600;
+        private boolean seedDevUsers = false;
         private UserSeed seed = new UserSeed();
 
         @Getter
