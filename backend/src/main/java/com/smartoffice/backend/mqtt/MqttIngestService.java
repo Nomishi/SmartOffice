@@ -9,6 +9,7 @@ import com.smartoffice.backend.repository.TelemetryRepository;
 import com.smartoffice.backend.service.AckService;
 import com.smartoffice.backend.service.AlertService;
 import com.smartoffice.backend.service.DeviceService;
+import com.smartoffice.backend.realtime.RealtimeService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Map;
 
 /**
  * Nhận bản tin MQTT, validate deviceId theo topic, lưu DB và bắn event cho rule engine.
@@ -36,6 +38,7 @@ public class MqttIngestService {
     private final TelemetryRepository telemetryRepository;
     private final PowerReadingRepository powerReadingRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final RealtimeService realtimeService;
 
     @Transactional
     public void handle(String topic, String payloadJson) throws Exception {
@@ -103,6 +106,7 @@ public class MqttIngestService {
 
             eventPublisher.publishEvent(new TelemetryStoredEvent(deviceId, DeviceType.ENV, now,
                     quality, telemetry.getTemperature(), telemetry.getPresence(), telemetry.getAirRaw()));
+            realtimeService.broadcast("telemetry", telemetry);
         } else {
             PowerReading reading = new PowerReading();
             reading.setDeviceId(deviceId);
@@ -121,6 +125,7 @@ public class MqttIngestService {
 
             eventPublisher.publishEvent(new TelemetryStoredEvent(deviceId, DeviceType.CONTROL, now,
                     quality, null, null, null));
+            realtimeService.broadcast("telemetry", reading);
         }
     }
 
@@ -141,6 +146,13 @@ public class MqttIngestService {
 
         deviceService.applyStatus(device, node, now);
         deviceService.recordSeen(device, now);
+        realtimeService.broadcast("status", Map.of(
+                "deviceId", deviceId,
+                "online", true,
+                "status", device.getStatus(),
+                "mode", device.getMode(),
+                "lastSeenAt", now.toString()
+        ));
     }
 
     private Quality parseQuality(JsonNode node) {
