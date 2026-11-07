@@ -18,10 +18,15 @@ Kết quả tại thời điểm ghi:
 | --- | ---: | --- |
 | `SmartOfficeApplicationTests` | 1 | PASS |
 | `ApiSmokeTest` | 8 | PASS |
+| `AuthIntegrationTest` | 8 | PASS |
+| `StreamIntegrationTest` | 2 | PASS |
 | `RuleServiceTest` | 3 | PASS |
 | `EnergyServiceTest` | 1 | PASS |
 | `DeviceServiceTest` | 2 | PASS |
-| **Tổng** | **15** | **0 failure, 0 error** |
+| **Tổng** | **25** | **0 failure, 0 error** |
+
+`AuthIntegrationTest` kiểm tra: unauthenticated request → 401 `UNAUTHORIZED`, login đúng trả JWT token + role + expiresIn 3600, login sai mật khẩu → 401 `UNAUTHORIZED`, viewer đọc dữ liệu được nhưng gửi lệnh bị chặn 403 `FORBIDDEN`, operator gửi lệnh được và bị chặn khi xem danh sách users (403 `FORBIDDEN`), admin tạo user mới và xem danh sách users thành công.
+`StreamIntegrationTest` kiểm tra: SSE stream `/api/stream` yêu cầu xác thực (401), user đã xác thực kết nối nhận event thành công và tăng active subscriber count.
 
 `ApiSmokeTest` kiểm tra: list devices seed, list rules seed, alerts endpoint, status endpoint,
 telemetry thiếu from/to → 400 `VALIDATION_ERROR`, telemetry device không tồn tại → 404 `NOT_FOUND`,

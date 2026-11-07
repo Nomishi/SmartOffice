@@ -17,11 +17,11 @@ Nếu cần đổi payload/endpoint chung, sửa contract trước.
 | DB telemetry/power/command/alert/rule/audit | ✅ | JPA + PostgreSQL 16 |
 | REST cho M4 | ⚠️ | Thiếu auth; thiếu `POST /api/devices`; thiếu config history |
 | Rule/automation | ✅ | 5 rule + offline + sensor fault; có test live |
-| Realtime SSE | ❌ | P0 trong prompt handoff |
-| Auth JWT/RBAC/user | ❌ | P0; hiện dùng header tạm `X-User-Id` |
-| Flyway | ❌ | P0; hiện `ddl-auto: update` |
-| Dockerfile backend | ❌ | P0 |
-| OpenAPI/Swagger | ❌ | P0 |
+| Realtime SSE | ✅ | `GET /api/stream`, hỗ trợ Bearer & `?token=`, event camelCase, heartbeat 15s |
+| Auth JWT/RBAC/user | ✅ | JWT HS256, BCrypt, ADMIN/OPERATOR/VIEWER, seed dev users, bỏ `X-User-Id` |
+| Flyway | ✅ | `V1__init.sql` khởi tạo 9 bảng + index, `ddl-auto: validate` |
+| Dockerfile backend | ✅ | Multi-stage Dockerfile + tích hợp compose |
+| OpenAPI/Swagger | ✅ | `springdoc-openapi` + `/swagger-ui/index.html` + `docs/frontend-integration.md` |
 | Retention/rate limit | ❌ | P2 |
 | Room/Schedule entity | ❌ | MVP dùng `roomId` string; xem mục 4 |
 

@@ -146,3 +146,4 @@ Các mã lỗi phổ biến:
 - `409 COMMAND_DUPLICATE`: Trùng Idempotency-Key với nội dung khác.
 - `503 MQTT_UNAVAILABLE`: Mất kết nối tới broker MQTT.
 - `504 COMMAND_TIMEOUT`: Hết thời gian chờ ACK khi dùng `?wait=true`.
+
