@@ -14,13 +14,13 @@ Repo: `https://github.com/Nomishi/SmartOffice`
 ```bash
 git clone https://github.com/Nomishi/SmartOffice.git
 cd SmartOffice
-git checkout main
-git pull origin main
-git checkout -b feature/backend-complete
+git checkout feature/backend-complete
+git pull origin feature/backend-complete
 ```
 
-- Làm **toàn bộ** thay đổi trên nhánh `feature/backend-complete` (hoặc tách nhánh con nếu cần,
-  nhưng PR cuối cùng phải gộp về nhánh này, không phải `main`).
+Nhánh `feature/backend-complete` **đã tồn tại** và chứa baseline contract v1.3 + docs đã soát.
+Làm tiếp trực tiếp trên nhánh này (hoặc tách nhánh con nếu cần, nhưng PR cuối cùng phải gộp về
+`feature/backend-complete`, không phải `main`).
 - **Không** push thẳng `main`, **không** force push, **không** merge PR.
 - Commit nhỏ, message rõ ràng (`feat:`, `fix:`, `test:`, `docs:`, `chore:`).
 - Kết thúc: push nhánh + mở Pull Request vào `main` (draft cũng được), ghi rõ:
