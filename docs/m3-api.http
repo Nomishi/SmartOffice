@@ -1,93 +1,138 @@
 ### M3 backend API — ví dụ gọi tay
 ### Dùng với VS Code REST Client hoặc IntelliJ HTTP Client.
 ### Backend: http://localhost:8080
-###
-### HIỆN TẠI chưa có auth: dùng header tạm X-User-Id.
-### Sau khi P0 auth xong: bỏ X-User-Id, thêm Authorization: Bearer {{token}}
-### và lấy token từ POST /api/auth/login.
 
 @base = http://localhost:8080
 @ctrl = office-ctrl-01
 @env = office-env-01
-# Đổi ngày cho đúng khoảng truy vấn (tối đa 7 ngày)
 @from = 2026-11-06T00:00:00Z
 @to = 2026-11-07T00:00:00Z
 
+### 1. Đăng nhập Operator lấy JWT token
+# @name loginOperator
+POST {{base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "operator1",
+  "password": "operatorPassword123!"
+}
+
+### Lưu token nhận được
+@token = {{loginOperator.response.body.token}}
+
+### 2. Đăng nhập Admin lấy JWT token
+# @name loginAdmin
+POST {{base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "adminPassword123!"
+}
+
+@adminToken = {{loginAdmin.response.body.token}}
+
 ### Danh sách thiết bị
 GET {{base}}/api/devices
+Authorization: Bearer {{token}}
 
 ### Chi tiết thiết bị
 GET {{base}}/api/devices/{{ctrl}}
+Authorization: Bearer {{token}}
 
 ### Trạng thái node điều khiển
 GET {{base}}/api/devices/{{ctrl}}/status
+Authorization: Bearer {{token}}
 
 ### Trạng thái node môi trường
 GET {{base}}/api/devices/{{env}}/status
+Authorization: Bearer {{token}}
 
 ### Lịch sử telemetry (from/to bắt buộc, mặc định size=20)
 GET {{base}}/api/devices/{{env}}/telemetry?from={{from}}&to={{to}}&page=0&size=20
+Authorization: Bearer {{token}}
 
 ### Điện năng theo giờ (bucket = raw|minute|hour|day)
 GET {{base}}/api/devices/{{ctrl}}/energy?from={{from}}&to={{to}}&bucket=hour
+Authorization: Bearer {{token}}
 
 ### Bật đèn (202 ngay, ACK cập nhật sau)
 POST {{base}}/api/devices/{{ctrl}}/commands
+Authorization: Bearer {{token}}
 Content-Type: application/json
-X-User-Id: 2
 Idempotency-Key: 6f1c2a4e-1111-4c3d-9f00-000000000001
 
 {"target":"light1","action":"ON"}
 
 ### Bật quạt và chờ ACK tối đa 10s
 POST {{base}}/api/devices/{{ctrl}}/commands?wait=true
+Authorization: Bearer {{token}}
 Content-Type: application/json
-X-User-Id: 2
 
 {"target":"fan1","action":"ON"}
 
 ### Mở cửa (timeout 10s thay vì 5s)
 POST {{base}}/api/devices/{{ctrl}}/commands?wait=true
+Authorization: Bearer {{token}}
 Content-Type: application/json
-X-User-Id: 2
 
 {"target":"door1","action":"OPEN"}
 
 ### Lịch sử lệnh
 GET {{base}}/api/devices/{{ctrl}}/commands
+Authorization: Bearer {{token}}
 
 ### Đổi mode sang MANUAL (automation không ghi đè)
 POST {{base}}/api/devices/{{ctrl}}/mode
+Authorization: Bearer {{token}}
 Content-Type: application/json
-X-User-Id: 2
 
 {"mode":"MANUAL"}
 
 ### Gửi config retained xuống thiết bị
 PUT {{base}}/api/devices/{{ctrl}}/config
+Authorization: Bearer {{token}}
 Content-Type: application/json
-X-User-Id: 2
 
 {"telemetryIntervalSec":5,"servoOpenDeg":90,"servoCloseDeg":0}
 
 ### Danh sách cảnh báo đang mở (mặc định ẩn alert đã resolved)
 GET {{base}}/api/alerts?status=OPEN
+Authorization: Bearer {{token}}
 
-### Xem cả kể cả alert đã tự đóng
+### Xem cả alert đã tự đóng
 GET {{base}}/api/alerts?includeResolved=true
+Authorization: Bearer {{token}}
 
 ### Xác nhận cảnh báo
 PATCH {{base}}/api/alerts/1/acknowledge
-X-User-Id: 2
+Authorization: Bearer {{token}}
 
-### Danh sách rule
+### Lấy danh sách rules
 GET {{base}}/api/rules
+Authorization: Bearer {{token}}
 
-### Sửa ngưỡng nhiệt độ
+### Cập nhật rule (Admin/Operator)
 PUT {{base}}/api/rules/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{"enabled":true,"params":{"thresholdC":32,"consecutiveSamples":3}}
+{
+  "name": "Nhiệt độ cao",
+  "enabled": true,
+  "params": {"thresholdC": 31, "consecutiveSamples": 3},
+  "action": {"alert": true, "severity": "HIGH"}
+}
 
-### Audit log
+### Lấy danh sách người dùng (Chỉ Admin)
+GET {{base}}/api/users
+Authorization: Bearer {{adminToken}}
+
+### Xem audit logs (Chỉ Admin)
 GET {{base}}/api/audit-logs
+Authorization: Bearer {{adminToken}}
+
+### Kết nối SSE Realtime Stream
+GET {{base}}/api/stream?token={{token}}
+Accept: text/event-stream
