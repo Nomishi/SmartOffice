@@ -1,13 +1,23 @@
 ### M3 backend API — ví dụ gọi tay
 ### Dùng với VS Code REST Client hoặc IntelliJ HTTP Client.
 ### Backend: http://localhost:8080
+###
+### HIỆN TẠI chưa có auth: dùng header tạm X-User-Id.
+### Sau khi P0 auth xong: bỏ X-User-Id, thêm Authorization: Bearer {{token}}
+### và lấy token từ POST /api/auth/login.
 
 @base = http://localhost:8080
 @ctrl = office-ctrl-01
 @env = office-env-01
+# Đổi ngày cho đúng khoảng truy vấn (tối đa 7 ngày)
+@from = 2026-11-06T00:00:00Z
+@to = 2026-11-07T00:00:00Z
 
 ### Danh sách thiết bị
 GET {{base}}/api/devices
+
+### Chi tiết thiết bị
+GET {{base}}/api/devices/{{ctrl}}
 
 ### Trạng thái node điều khiển
 GET {{base}}/api/devices/{{ctrl}}/status
@@ -15,11 +25,11 @@ GET {{base}}/api/devices/{{ctrl}}/status
 ### Trạng thái node môi trường
 GET {{base}}/api/devices/{{env}}/status
 
-### Lịch sử telemetry (đổi thời gian cho đúng)
-GET {{base}}/api/devices/{{env}}/telemetry?from=2026-11-06T00:00:00Z&to=2026-11-07T00:00:00Z&page=0&size=20
+### Lịch sử telemetry (from/to bắt buộc, mặc định size=20)
+GET {{base}}/api/devices/{{env}}/telemetry?from={{from}}&to={{to}}&page=0&size=20
 
-### Điện năng theo giờ
-GET {{base}}/api/devices/{{ctrl}}/energy?from=2026-11-06T00:00:00Z&to=2026-11-07T00:00:00Z&bucket=hour
+### Điện năng theo giờ (bucket = raw|minute|hour|day)
+GET {{base}}/api/devices/{{ctrl}}/energy?from={{from}}&to={{to}}&bucket=hour
 
 ### Bật đèn (202 ngay, ACK cập nhật sau)
 POST {{base}}/api/devices/{{ctrl}}/commands
@@ -39,6 +49,7 @@ X-User-Id: 2
 ### Mở cửa (timeout 10s thay vì 5s)
 POST {{base}}/api/devices/{{ctrl}}/commands?wait=true
 Content-Type: application/json
+X-User-Id: 2
 
 {"target":"door1","action":"OPEN"}
 
@@ -48,6 +59,7 @@ GET {{base}}/api/devices/{{ctrl}}/commands
 ### Đổi mode sang MANUAL (automation không ghi đè)
 POST {{base}}/api/devices/{{ctrl}}/mode
 Content-Type: application/json
+X-User-Id: 2
 
 {"mode":"MANUAL"}
 
@@ -58,8 +70,11 @@ X-User-Id: 2
 
 {"telemetryIntervalSec":5,"servoOpenDeg":90,"servoCloseDeg":0}
 
-### Danh sách cảnh báo đang mở
+### Danh sách cảnh báo đang mở (mặc định ẩn alert đã resolved)
 GET {{base}}/api/alerts?status=OPEN
+
+### Xem cả kể cả alert đã tự đóng
+GET {{base}}/api/alerts?includeResolved=true
 
 ### Xác nhận cảnh báo
 PATCH {{base}}/api/alerts/1/acknowledge

@@ -4,12 +4,42 @@ Backend Spring Boot cho hệ thống phòng làm việc thông minh. Đây là p
 firmware (M1/M2) và frontend (M4).
 
 - MQTT: subscribe telemetry/status/ack, publish command/config
-- PostgreSQL: lưu telemetry, công suất, lệnh, ACK, cảnh báo, rule, audit log
+- PostgreSQL: lưu telemetry, công suất, lệnh, ACK, cảnh báo, rule, config, audit log
 - REST API cho M4
 - Rule engine: nhiệt độ cao, không khí xấu, phòng trống, cửa mở lâu, lãng phí điện, mất heartbeat, sensor fault
 
-Contract gốc: [`Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md)
-(version 1.2). Mọi thay đổi payload/endpoint phải sửa file đó trước.
+Nguồn chân lý: [`Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md)
+(version 1.3). Ghi chú triển khai: [`docs/m3-contract-notes.md`](docs/m3-contract-notes.md).
+Mọi thay đổi payload/endpoint phải sửa contract trước.
+
+## Trạng thái triển khai
+
+**Đã có và đã test:**
+
+- MQTT Paho: subscribe `office/+/telemetry|status|ack`, publish `command|config`, QoS 1,
+  reconnect, retained status/config, validate `deviceId` topic vs payload.
+- Ingest telemetry Node A/B, status/heartbeat, ACK command/config; command lifecycle
+  `PENDING → SUCCESS/FAILED/TIMEOUT`, timeout 5s (door1 10s), retry 2, Idempotency-Key.
+- Entity: `Device`, `Telemetry`, `PowerReading`, `Command`, `Alert`, `Rule`, `DeviceConfig`, `AuditLog`.
+- REST: devices/status/telemetry/energy/commands/mode/config/alerts/rules/audit-logs, phân trang,
+  format lỗi `{"error":{"code","message","details","timestamp"}}`.
+- Rule engine: 5 rule mặc định + `DEVICE_OFFLINE` + `SENSOR_FAULT`; automation không ghi đè `MANUAL`;
+  chỉ dùng telemetry `VALID`.
+- Mock profile `mock` giả lập cả M1+M2 và trả ACK thật.
+- 15 test tự động đang xanh; đã test live command→ACK, alert, LWT offline, SENSOR_FAULT,
+  automation phòng trống. Xem [`docs/test-checklist.md`](docs/test-checklist.md).
+
+**Chưa có (nằm trong kế hoạch P0/P1):**
+
+- Auth JWT + RBAC + user management (đang dùng header tạm `X-User-Id`).
+- SSE realtime cho dashboard.
+- OpenAPI/Swagger + tài liệu tích hợp frontend.
+- Flyway migration (đang `ddl-auto: update`).
+- `Dockerfile` backend + service backend trong compose.
+- Retention dữ liệu, rate limit, test MQTT bằng broker thật trong CI.
+- Entity `Room`, `Schedule` (MVP dùng `roomId` string; xem ghi chú contract).
+
+Kế hoạch hoàn thiện backend: [`docs/PROMPT-backend-complete.md`](docs/PROMPT-backend-complete.md).
 
 ## Cấu trúc
 
@@ -25,7 +55,8 @@ SmartOffice/
 │       ├── config/              # properties, CORS, seed data
 │       └── mock/                # giả lập M1+M2 (profile mock)
 ├── infra/mosquitto/             # cấu hình broker cho dev
-├── docker-compose.yml           # PostgreSQL + Mosquitto
+├── docs/                        # ghi chú contract, API, test, prompt handoff
+├── docker-compose.yml           # PostgreSQL + Mosquitto (backend service: TODO P0)
 ├── .env.example
 └── Contract_chung_...md         # contract chung của nhóm
 ```
@@ -35,14 +66,16 @@ SmartOffice/
 ### 1. Bật hạ tầng
 
 ```powershell
+Copy-Item .env.example .env      # chỉnh nếu cần; KHÔNG commit .env
 docker compose up -d
-docker compose ps          # chờ postgres healthy
+docker compose ps                # chờ postgres healthy
 ```
 
 Postgres ở `localhost:5433` (tránh đụng Postgres local), Mosquitto ở `1883`.
 
-> Nếu Windows đã cài Mosquitto service và chiếm port 1883, dừng service đó trước:
-> `Stop-Service mosquitto` (mở PowerShell admin) hoặc dùng broker Docker.
+> **Windows:** nếu đã cài Mosquitto service, nó có thể giữ `127.0.0.1:1883` song song với broker
+> Docker. Kiểm tra bằng `Get-NetTCPConnection -LocalPort 1883`. Nên tắt một bên:
+> `Stop-Service mosquitto` (PowerShell admin) nếu dùng broker Docker.
 
 ### 2. Chạy backend + giả lập thiết bị
 
@@ -51,8 +84,10 @@ cd backend
 mvn spring-boot:run -Dspring-boot.run.profiles=mock
 ```
 
-`mock` sẽ tự publish telemetry/status cho 2 node mỗi 5 giây, và nhận command/config để trả ACK.
-Không cần ESP32, không cần MQTTX.
+Profile `mock` publish telemetry mỗi 5 giây và status/heartbeat mỗi 30 giây cho 2 node, đồng thời
+nhận command/config để trả ACK. Không cần ESP32, không cần MQTTX.
+Chu kỳ hiện diện: 3 phút có người, 2 phút vắng (dùng để test automation; có thể hạ
+`absenceMinutes` xuống 1 để thấy nhanh).
 
 Chạy thật (không mock):
 
@@ -68,26 +103,31 @@ mvn test
 
 ### 3. Kiểm tra
 
+Dùng `curl.exe` (PowerShell 7) hoặc `Invoke-RestMethod`:
+
 ```powershell
-curl http://localhost:8080/api/devices
-curl http://localhost:8080/api/devices/office-ctrl-01/status
-curl http://localhost:8080/api/alerts
-curl http://localhost:8080/api/rules
+curl.exe http://localhost:8080/api/devices
+curl.exe http://localhost:8080/api/devices/office-ctrl-01/status
+curl.exe http://localhost:8080/api/alerts
+curl.exe http://localhost:8080/api/rules
 ```
 
-Gửi lệnh bật đèn (mock sẽ trả ACK sau ~180ms):
+Gửi lệnh bật đèn (mock trả ACK sau ~180ms):
 
 ```powershell
-curl -i -X POST http://localhost:8080/api/devices/office-ctrl-01/commands `
+curl.exe -i -X POST http://localhost:8080/api/devices/office-ctrl-01/commands `
   -H "Content-Type: application/json" `
   -H "X-User-Id: 2" `
   -H "Idempotency-Key: 11111111-1111-1111-1111-111111111111" `
   -d '{"target":"light1","action":"ON"}'
 
 # chờ ACK rồi trả kết quả
-curl -X POST "http://localhost:8080/api/devices/office-ctrl-01/commands?wait=true" `
+curl.exe -X POST "http://localhost:8080/api/devices/office-ctrl-01/commands?wait=true" `
   -H "Content-Type: application/json" -d '{"target":"fan1","action":"ON"}'
 ```
+
+> `X-User-Id` là tạm thời cho tới khi P0 auth JWT hoàn tất. Sau đó dùng
+> `Authorization: Bearer <token>`.
 
 ## MQTT contract đang dùng
 
@@ -101,9 +141,12 @@ curl -X POST "http://localhost:8080/api/devices/office-ctrl-01/commands?wait=tru
 | `office/{deviceId}/config` | backend → device, retained | `{"configId":"CFG-0001","telemetryIntervalSec":5,"servoOpenDeg":90,"servoCloseDeg":0,"issuedBy":"user-1"}` |
 
 - QoS 1 cho telemetry/command/ack/config. Status và config retained.
-- Heartbeat 30s, quá 90s không thấy → `OFFLINE` + alert `DEVICE_OFFLINE`.
+- Heartbeat 30s, quá 90s không thấy → `OFFLINE` + alert `DEVICE_OFFLINE`. LWT `{"online":false}`
+  cũng tạo alert ngay.
 - Command timeout 5s (door1 10s), retry tối đa 2 lần → `TIMEOUT`.
-- Chỉ dùng telemetry `quality=VALID` cho automation/ngưỡng; `INVALID` chỉ lưu + đếm `SENSOR_FAULT`.
+- Chỉ dùng telemetry `quality=VALID` cho automation/ngưỡng; `INVALID` chỉ lưu + đếm `SENSOR_FAULT`;
+  `SUSPECT` lưu/hiển thị nhưng phá chuỗi VALID/INVALID liên tiếp.
+- Thiếu `quality` → backend coi `VALID` + log WARN (firmware cũ).
 
 Test tay bằng MQTTX / mosquitto_pub:
 
@@ -117,21 +160,25 @@ mosquitto_sub -h localhost -t 'office/#' -v
 | Method | Endpoint | Ghi chú |
 | --- | --- | --- |
 | GET | `/api/devices` | phân trang `page,size,sort` |
+| GET | `/api/devices/{id}` | chi tiết thiết bị |
 | GET | `/api/devices/{id}/status` | trạng thái + actuator + telemetry mới nhất |
-| GET | `/api/devices/{id}/telemetry?from=&to=` | bắt buộc from/to, tối đa 7 ngày |
-| GET | `/api/devices/{id}/energy?from=&to=&bucket=` | `raw|minute|hour|day` |
+| GET | `/api/devices/{id}/telemetry?from=&to=` | bắt buộc from/to, tối đa 7 ngày, mặc định `size=20` |
+| GET | `/api/devices/{id}/energy?from=&to=&bucket=` | `raw|minute|hour|day`, tối đa 1000 bucket |
 | GET | `/api/devices/{id}/commands` | lịch sử lệnh + ACK |
 | POST | `/api/devices/{id}/commands` | 202, hỗ trợ `Idempotency-Key`, `?wait=true` |
 | POST | `/api/devices/{id}/mode` | `{"mode":"MANUAL"}` |
 | PUT | `/api/devices/{id}/config` | publish topic config retained |
 | POST | `/api/devices/{id}/activate|lock|decommission` | lifecycle cơ bản |
-| GET | `/api/alerts` | lọc `status,type,deviceId,from,to` |
+| GET | `/api/alerts` | lọc `status,type,deviceId,from,to`; mặc định ẩn alert đã resolved |
 | PATCH | `/api/alerts/{id}/acknowledge` | |
 | GET | `/api/rules` | 5 rule mặc định |
 | PUT | `/api/rules/{id}` | sửa ngưỡng, validate theo contract |
 | GET | `/api/audit-logs` | nhật ký lệnh/config |
 
-Auth/JWT và quản lý user thuộc phần M2 — hiện dùng header tạm `X-User-Id`, sẽ thay bằng JWT.
+- Alert đã tự đóng (`resolvedAt != null`) bị ẩn mặc định; thêm `?includeResolved=true` để xem.
+- Lỗi: 400 `VALIDATION_ERROR`, 404 `NOT_FOUND`, 409 `DEVICE_NOT_ACTIVE|DEVICE_OFFLINE|DEVICE_LOCKED|DEVICE_DECOMMISSIONED|COMMAND_DUPLICATE|CONFIG_CONFLICT`, 503 `MQTT_UNAVAILABLE`, 504 `COMMAND_TIMEOUT`.
+- Auth/JWT + user management **chưa có**; hiện dùng header tạm `X-User-Id`. Đây là P0 của
+  [`docs/PROMPT-backend-complete.md`](docs/PROMPT-backend-complete.md), không phải phần M2.
 
 ## Rule engine
 
@@ -143,8 +190,10 @@ Auth/JWT và quản lý user thuộc phần M2 — hiện dùng header tạm `X-
 | `DOOR_OPEN_LIMIT` | `door1=OPEN` quá X phút → alert |
 | `ENERGY_WASTE` | vắng + công suất > ngưỡng → alert, AUTO thì tắt tải |
 | `SENSOR_FAULT` | 3 bản tin `INVALID` liên tiếp → alert; 3 `VALID` liên tiếp → tự đóng |
+| `DEVICE_OFFLINE` | quá 90s không status/telemetry → alert; có dữ liệu mới → tự đóng |
 
 Thiết bị `MANUAL` không bị automation ghi đè. Không có dữ liệu / `INVALID` / `SUSPECT` không bị coi là phòng trống.
+`ENERGY_WASTE` chỉ dùng power reading `VALID` và còn mới (trong 90s).
 
 ## Biến môi trường
 
@@ -155,33 +204,37 @@ Copy `.env.example` → `.env` (không commit). Các biến chính:
 | `DB_URL` | `jdbc:postgresql://localhost:5433/smartoffice` |
 | `DB_USER` / `DB_PASSWORD` | `smartoffice` / `smartoffice` |
 | `MQTT_BROKER_URL` | `tcp://localhost:1883` |
+| `MQTT_CLIENT_ID` | `smartoffice-backend` |
 | `MQTT_ENABLED` | `true` (test = false) |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` |
 
+Khi chạy backend trong Docker (P0), `DB_URL` phải trỏ `jdbc:postgresql://postgres:5432/smartoffice`
+và `MQTT_BROKER_URL=tcp://mosquitto:1883`.
+
 ## Git workflow (contract mục 13)
 
+Repo: `https://github.com/Nomishi/SmartOffice`. Không push thẳng `main`.
+
 ```powershell
-git init
-git config user.name "Tên của mày"
-git config user.email "email@example.com"
+git checkout main
+git pull origin main
+git checkout -b feature/<mảng>-<tên>    # ví dụ feature/backend-mqtt-subscriber
+# code + test
 git add .
-git commit -m "chore: scaffold M3 backend (Spring Boot, MQTT, Postgres, rule engine)"
-git branch -M main
-git remote add origin https://github.com/<user>/<repo>.git
-git push -u origin main
+git commit -m "feat: ..."
+git push -u origin feature/<mảng>-<tên>
 ```
 
-Sau đó làm nhánh riêng:
+Mở Pull Request vào `main`, cần ít nhất 1 người review. Xong = code + test chạy + docs + merge.
 
-```powershell
-git checkout -b feature/backend-mqtt-subscriber
-```
+## Việc tiếp theo (ưu tiên P0 → P1)
 
-## Việc tiếp theo
-
-- [ ] JWT + RBAC (phối hợp M2)
-- [ ] SSE/WebSocket realtime cho M4
-- [ ] Mock publisher độc lập (script Python) cho M1
-- [ ] Migration Flyway thay `ddl-auto: update`
-- [ ] Mosquitto ACL + credential (M4)
+- [ ] Auth JWT + RBAC + user management (backend M3, unblock M4)
+- [ ] SSE realtime `/api/stream` cho dashboard
+- [ ] OpenAPI/Swagger + `docs/frontend-integration.md`
+- [ ] Flyway `V1__init.sql`, chuyển `ddl-auto: validate`
+- [ ] `Dockerfile` + service backend trong `docker-compose.yml`
+- [ ] Test automation/offline/command lifecycle đầy đủ; test MQTT broker thật
+- [ ] Retention telemetry, rate limit
+- [ ] Mosquitto ACL + credential (M4 phối hợp)
 - [ ] Test với ESP32 thật + relay thật

@@ -55,7 +55,7 @@ public class HealthMonitor {
                         (double) properties.getRules().getOfflineTimeoutSeconds(),
                         "Thiết bị mất heartbeat quá "
                                 + properties.getRules().getOfflineTimeoutSeconds() + " giây");
-            } else if (!timedOut) {
+            } else if (!timedOut && device.isOnline()) {
                 alertService.resolve(AlertType.DEVICE_OFFLINE, device.getDeviceId());
             }
         }

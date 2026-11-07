@@ -78,7 +78,8 @@ public class DeviceController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "100") int size) {
+            @RequestParam(defaultValue = "20") int size) {
+        deviceService.getRequired(id);
         validateRange(from, to);
         Pageable pageable = PageRequest.of(page, clampSize(size),
                 Sort.by(Sort.Direction.DESC, "receivedAt"));
@@ -94,6 +95,7 @@ public class DeviceController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(defaultValue = "hour") String bucket) {
+        deviceService.getRequired(id);
         return energyService.compute(id, from, to, bucket);
     }
 
@@ -102,6 +104,7 @@ public class DeviceController {
             @PathVariable String id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        deviceService.getRequired(id);
         Pageable pageable = PageRequest.of(page, clampSize(size),
                 Sort.by(Sort.Direction.DESC, "issuedAt"));
         return commandService.listByDevice(id, pageable);

@@ -66,7 +66,8 @@ public class MqttIngestService {
     }
 
     private void handleTelemetry(String deviceId, JsonNode node) {
-        boolean envLike = node.has("temperature") || node.has("lux") || node.has("presence");
+        boolean envLike = !node.has("busVoltageV") && !node.has("light1PowerW")
+                && !node.has("fan1PowerW");
         Device device = deviceService.getOrAutoRegister(deviceId, envLike);
         if (device.getStatus() == DeviceStatus.LOCKED
                 || device.getStatus() == DeviceStatus.DECOMMISSIONED) {

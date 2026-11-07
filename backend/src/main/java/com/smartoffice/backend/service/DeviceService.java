@@ -86,8 +86,11 @@ public class DeviceService {
         } else if (quality == Quality.VALID) {
             device.setValidStreak(device.getValidStreak() + 1);
             device.setInvalidStreak(0);
+        } else {
+            // SUSPECT phá chuỗi: không tính là VALID liên tiếp, cũng không phải INVALID liên tiếp.
+            device.setInvalidStreak(0);
+            device.setValidStreak(0);
         }
-        // SUSPECT: lưu nhưng không dùng cho automation, không reset streak.
 
         if (quality == Quality.VALID && presence != null) {
             if (presence) {

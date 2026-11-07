@@ -57,6 +57,24 @@ class ApiSmokeTest {
     }
 
     @Test
+    void telemetryOfUnknownDeviceIs404() throws Exception {
+        mockMvc.perform(get("/api/devices/khong-ton-tai/telemetry")
+                        .queryParam("from", "2026-11-01T00:00:00Z")
+                        .queryParam("to", "2026-11-02T00:00:00Z"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("NOT_FOUND"));
+    }
+
+    @Test
+    void telemetryDefaultsToPageSize20() throws Exception {
+        mockMvc.perform(get("/api/devices/office-env-01/telemetry")
+                        .queryParam("from", "2026-11-01T00:00:00Z")
+                        .queryParam("to", "2026-11-02T00:00:00Z"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size").value(20));
+    }
+
+    @Test
     void commandToOfflineDeviceIsRejected() throws Exception {
         mockMvc.perform(post("/api/devices/office-ctrl-01/commands")
                         .contentType("application/json")
