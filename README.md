@@ -1,267 +1,189 @@
-# Smart Office IoT — M3 Backend
+# Smart Office IoT — Phòng làm việc thông minh
 
-Backend Spring Boot cho hệ thống phòng làm việc thông minh. Đây là phần **M3**: cầu nối giữa
-firmware (M1/M2) và frontend (M4).
+Hệ thống IoT giám sát môi trường và điều khiển thiết bị cho một phòng làm việc:
+ESP32 đọc cảm biến, gửi dữ liệu qua MQTT; backend lưu trữ, sinh cảnh báo, tự động hóa;
+frontend hiển thị dashboard realtime và điều khiển thiết bị.
 
-- MQTT: subscribe telemetry/status/ack, publish command/config
-- PostgreSQL: lưu telemetry, công suất, lệnh, ACK, cảnh báo, rule, config, audit log
-- REST API + SSE cho M4; Auth JWT + RBAC (ADMIN/OPERATOR/VIEWER)
-- Rule engine: nhiệt độ cao, không khí xấu, phòng trống, cửa mở lâu, lãng phí điện, mất heartbeat, sensor fault
+Contract chung của nhóm: [`Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md) **(v1.3)**.
+Đây là nguồn chân lý cho topic, payload, endpoint, enum và mã lỗi.
 
-Nguồn chân lý: [`Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md)
-(version 1.3). Ghi chú triển khai: [`docs/m3-contract-notes.md`](docs/m3-contract-notes.md).
-Mọi thay đổi payload/endpoint phải sửa contract trước.
+## Kiến trúc
 
-## Trạng thái triển khai
+```text
+┌─────────────────────┐        MQTT        ┌──────────────────┐
+│ M1 — Node A         │ ─────────────────► │                  │
+│ AHT20, BH1750,      │                    │    Mosquitto     │
+│ LD2410C, MQ-135     │ ◄───────────────── │      Broker      │
+└─────────────────────┘                    │                  │
+┌─────────────────────┐        MQTT        │                  │
+│ M2 — Node B         │ ─────────────────► │                  │
+│ relay, servo,       │ ◄───────────────── │                  │
+│ buzzer, INA219 ×2   │                    └────────┬─────────┘
+└─────────────────────┘                             │ MQTT
+                                                    ▼
+                                         ┌─────────────────────┐
+                                         │ M3 — Spring Boot    │
+                                         │ MQTT / DB / REST    │
+                                         │ rule + automation   │
+                                         └──────────┬──────────┘
+                                                    │ JDBC
+                                                    ▼
+                                         ┌─────────────────────┐
+                                         │    PostgreSQL       │
+                                         └──────────┬──────────┘
+                                                    │ REST + SSE
+                                                    ▼
+                                         ┌─────────────────────┐
+                                         │ M4 — Frontend       │
+                                         │ dashboard/control   │
+                                         └─────────────────────┘
+```
 
-**P0 — Đã hoàn thành và verified:**
+## Thành phần & phân công
 
-| Hạng mục | Trạng thái |
+| Module | Sở hữu | Nội dung | Trạng thái |
+| --- | --- | --- | --- |
+| **M1** | Firmware Node A | ESP32, AHT20 (nhiệt/ẩm), BH1750 (lux), LD2410C (hiện diện), MQ-135 (airRaw), publish telemetry/status | ⏳ chưa có code trong repo / chưa test phần cứng |
+| **M2** | Firmware Node B | ESP32, relay light1/fan1, buzzer, servo + công tắc từ door1, INA219 ×2, nhận command/config, ACK | ⏳ chưa có code trong repo / chưa test phần cứng |
+| **M3** | Backend | Spring Boot, MQTT, PostgreSQL, REST, SSE, auth, rule engine, automation, energy | ✅ P0 xong, 29 test pass |
+| **M4** | Frontend | Login, dashboard realtime, điều khiển, alert, history, energy, rule, quản trị | 🚧 sẵn sàng bắt đầu, chưa có code |
+
+Chi tiết M3: [`docs/m3-backend.md`](docs/m3-backend.md).
+
+## Phần cứng
+
+| Node | Linh kiện |
 | --- | --- |
-| Auth JWT HS512, RBAC ADMIN/OPERATOR/VIEWER | ✅ Xong |
-| SSE realtime `GET /api/stream` | ✅ Xong |
-| OpenAPI/Swagger + `docs/frontend-integration.md` | ✅ Xong |
-| Flyway V1+V2 migration, `ddl-auto: validate` | ✅ Xong |
-| Dockerfile + service backend trong docker-compose | ✅ Xong |
-| `mvn verify` xanh (29 test pass) | ✅ Xanh |
-| `docker compose up --build` → backend healthy | ✅ Chạy được |
-| Login → JWT → GET /api/devices hoạt động | ✅ Verified |
-| Flyway trên PostgreSQL 16 sạch | ✅ Verified |
+| Node A | ESP32, AHT20 (I2C 0x38), BH1750 (chung bus), LD2410C, MQ-135 |
+| Node B | ESP32, relay 5V 2 kênh, servo SG90 + công tắc từ FR3S, buzzer 5V, INA219 ×2 (0x40/0x41) |
+| Nguồn | 12V cho tải, 5V riêng cho logic, chung GND; cầu chì, diode chống xung quạt, tụ 1000µF cho servo |
 
-**P1/P2 — Chưa làm (ngoài scope P0):**
+Chỉ dùng tải DC 12V. Không đấu trực tiếp 220V.
 
-- Testcontainers cho Flyway/PostgreSQL test trong CI
-- Retention telemetry, rate limit 429, Prometheus metrics
-- Entity `Room`, `Schedule` (MVP dùng `roomId` string)
-- Mosquitto ACL + credential (phối hợp M4)
-- Test với ESP32 thật + relay thật
+## Cấu trúc repo
 
-Kế hoạch: [`docs/PROMPT-backend-complete.md`](docs/PROMPT-backend-complete.md).
-
-## Cấu trúc
-
-```
+```text
 SmartOffice/
-├── backend/                     # Spring Boot (M3)
-│   ├── Dockerfile               # multi-stage JDK 21 → JRE
-│   └── src/main/java/com/smartoffice/backend/
-│       ├── api/                 # REST controller + DTO + error handler
-│       ├── mqtt/                # Paho client + ingest
-│       ├── service/             # rule engine, automation, command, alert, energy
-│       ├── domain/              # JPA entity + enum
-│       ├── repository/
-│       ├── config/              # properties, CORS, seed data, OpenAPI
-│       ├── security/            # JWT, RBAC, filter
-│       └── mock/                # giả lập M1+M2 (profile mock)
-├── infra/mosquitto/             # cấu hình broker cho dev
-├── docs/                        # ghi chú contract, API, test, prompt handoff
-├── docker-compose.yml           # PostgreSQL + Mosquitto + Backend
-├── .env.example                 # copy → .env, không commit .env
-└── Contract_chung_...md         # contract chung của nhóm
+├── backend/                 # M3 — Spring Boot
+├── docs/                    # contract notes, API, setup, test
+├── infra/mosquitto/         # cấu hình broker dev
+├── docker-compose.yml       # PostgreSQL + Mosquitto + Backend
+├── .env.example             # copy → .env, không commit .env
+├── Contract_chung_...md     # contract v1.3
+├── ERD_...png               # sơ đồ dữ liệu
+└── Kien_truc_IoT_tong_the.png
 ```
 
-## Chạy nhanh (5 phút)
+`frontend/` (M4) và firmware M1/M2 sẽ được bổ sung vào repo hoặc repo riêng theo phân công.
 
-### 1. Bật toàn bộ stack
+## Chạy nhanh toàn hệ thống
+
+Yêu cầu: Docker Desktop. Frontend cần thêm Node.js 20+ (xem [`docs/frontend-setup.md`](docs/frontend-setup.md)).
+Chỉ cần Java 17 + Maven nếu chạy backend ngoài Docker.
 
 ```powershell
-Copy-Item .env.example .env      # chỉnh nếu cần; KHÔNG commit .env
-# Bắt buộc: đặt JWT_SECRET >= 32 ký tự
+Copy-Item .env.example .env      # KHÔNG commit .env
+
 docker compose up --build -d
-docker compose ps                # chờ backend healthy (~30s)
+docker compose ps                # chờ postgres/backend healthy
 ```
 
-Postgres ở `localhost:5433`, Mosquitto ở `1883` (hoặc `1884` nếu set `MOSQUITTO_PORT=1884`), Backend ở `8080`.
+| Dịch vụ | Địa chỉ host |
+| --- | --- |
+| Backend REST/SSE | `http://localhost:8080` |
+| Swagger UI | `http://localhost:8080/swagger-ui/index.html` |
+| PostgreSQL | `localhost:5433` (container 5432) |
+| Mosquitto MQTT | `localhost:1883` (hoặc `1884` nếu set `MOSQUITTO_PORT`) |
+| MQTT WebSocket | `localhost:9001` |
+| Frontend dev | `http://localhost:5173` (khi M4 chạy) |
 
-> **Windows:** nếu Windows Mosquitto service giữ cổng 1883, thêm `MOSQUITTO_PORT=1884` vào `.env`.
-> Kiểm tra: `Get-NetTCPConnection -LocalPort 1883`.
+> **Windows:** nếu service Mosquitto có sẵn giữ cổng 1883, set `MOSQUITTO_PORT=1884` trong `.env`.
+> Backend trong Docker vẫn dùng `mosquitto:1883` nội bộ.
 
-### 2. Lấy JWT token
-
-```powershell
-$body = @{ username = "admin"; password = $env:ADMIN_PASSWORD } | ConvertTo-Json
-$res = Invoke-RestMethod -Uri http://localhost:8080/api/auth/login `
-  -Method Post -Body $body -ContentType application/json
-$token = $res.token
-```
-
-Dev users (chỉ có khi `SEED_DEV_USERS=true` hoặc profile `dev`):
-
-| Username | Role | Mật khẩu (env) |
-| --- | --- | --- |
-| `admin` | ADMIN | `ADMIN_PASSWORD` |
-| `operator1` | OPERATOR | `OPERATOR_PASSWORD` |
-| `viewer1` | VIEWER | `VIEWER_PASSWORD` |
-
-### 3. Gọi API
+Kiểm tra nhanh:
 
 ```powershell
-# Danh sách thiết bị
+Invoke-RestMethod http://localhost:8080/actuator/health
+
+$login = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/auth/login `
+  -ContentType "application/json" `
+  -Body '{"username":"operator1","password":"operatorPassword123!"}'
+$token = $login.token
+
 Invoke-RestMethod http://localhost:8080/api/devices `
   -Headers @{ Authorization = "Bearer $token" }
-
-# Gửi lệnh (cần role OPERATOR hoặc ADMIN)
-$cmd = @{ target = "light1"; action = "ON" } | ConvertTo-Json
-Invoke-RestMethod -Method Post `
-  http://localhost:8080/api/devices/office-ctrl-01/commands `
-  -Headers @{ Authorization = "Bearer $token"; "Idempotency-Key" = [guid]::NewGuid() } `
-  -Body $cmd -ContentType application/json
-
-# SSE realtime (token qua query param — chỉ cho /api/stream)
-curl.exe -N "http://localhost:8080/api/stream?token=$token"
 ```
 
-### 4. Chạy backend riêng (không Docker)
+Dev users (chỉ seed khi `SEED_DEV_USERS=true` hoặc profile `dev`):
+
+| Username | Role | Password |
+| --- | --- | --- |
+| `admin` | ADMIN | `adminPassword123!` |
+| `operator1` | OPERATOR | `operatorPassword123!` |
+| `viewer1` | VIEWER | `viewerPassword123!` |
+
+## Không có phần cứng thì làm gì?
+
+Backend có profile `mock` giả lập cả Node A + Node B (telemetry 5s, status 30s, ACK ~180ms):
 
 ```powershell
 cd backend
-# Cần PostgreSQL chạy ở localhost:5433 và JWT_SECRET trong env
-$env:JWT_SECRET = "super-secure-jwt-secret-key-at-least-256-bits!"
+$env:JWT_SECRET = "smartoffice-local-secret-at-least-32-chars-long-123"
 $env:SEED_DEV_USERS = "true"
-mvn spring-boot:run
-```
-
-Profile mock (giả lập thiết bị, không cần ESP32):
-
-```powershell
 mvn spring-boot:run -Dspring-boot.run.profiles=mock
 ```
 
-Chạy test:
+Frontend M4 vẫn làm bình thường với mock này; xem [`docs/frontend-setup.md`](docs/frontend-setup.md).
 
-```powershell
-mvn test
-# hoặc đầy đủ
-mvn verify
-```
-
-### 5. Swagger UI
-
-```
-http://localhost:8080/swagger-ui/index.html
-```
-
-## Frontend M4
-
-- Hướng dẫn setup frontend (Node/Vite, env, login, SSE, checklist): [`docs/frontend-setup.md`](docs/frontend-setup.md)
-- Hợp đồng API chi tiết cho M4: [`docs/frontend-integration.md`](docs/frontend-integration.md)
-- Swagger: `http://localhost:8080/swagger-ui/index.html`
-- Frontend không cần Java/Maven/Postgres/Mosquitto; chỉ cần Node 20+ và backend đang chạy.
-
-## Auth & RBAC
-
-Tất cả endpoint `/api/**` (trừ `/api/auth/**`, `/api/stream`, `/actuator/health`) đều yêu cầu
-`Authorization: Bearer <JWT>`.
-
-| Role | Quyền |
-| --- | --- |
-| ADMIN | Full access, kể cả user management |
-| OPERATOR | Gửi lệnh, thay đổi mode/config, xem mọi thứ |
-| VIEWER | Chỉ đọc (GET); 403 nếu POST/PUT/PATCH |
-
-JWT claims: `sub=<username>`, `role=<ROLE>`, `userId=<id>`, `issuedBy=user-<id>`, exp=1h.
-
-**Bảo mật:**
-- `JWT_SECRET` phải ≥ 32 ký tự — backend throw `IllegalStateException` nếu thiếu.
-- `?token=` chỉ được chấp nhận tại `/api/stream` (SSE). Các endpoint khác bắt buộc Bearer header.
-- Dev users chỉ được seed khi `SEED_DEV_USERS=true` hoặc profile `dev`.
-- CORS: không dùng `*` + `allowCredentials(true)` cùng lúc.
-
-## SSE Realtime
-
-```
-GET /api/stream
-Authorization: Bearer <token>          # Bearer header
-# hoặc
-GET /api/stream?token=<JWT>            # query param (chỉ endpoint này)
-```
-
-Events được push mỗi khi có: telemetry mới, thay đổi trạng thái thiết bị, alert mới, ACK lệnh.
-
-## Flyway Migrations
+## Tài liệu
 
 | File | Nội dung |
 | --- | --- |
-| `V1__init.sql` | Tạo toàn bộ schema (users, devices, telemetry, power_reading, commands, alerts, rules, device_configs, audit_logs) |
-| `V2__add_device_streaks_and_version.sql` | `ADD COLUMN IF NOT EXISTS` cho các cột streak/version — idempotent cho dev DB đã chạy V1 cũ |
+| [`Contract_chung_...md`](Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md) | Contract v1.3: topic, payload, API, enum, lỗi |
+| [`docs/m3-backend.md`](docs/m3-backend.md) | Chi tiết backend M3: chạy, auth, SSE, Flyway, API, test |
+| [`docs/frontend-setup.md`](docs/frontend-setup.md) | Setup frontend M4: Node/Vite, env, login, SSE |
+| [`docs/frontend-integration.md`](docs/frontend-integration.md) | Hợp đồng API/SSE chi tiết cho M4 |
+| [`docs/m3-api.http`](docs/m3-api.http) | Ví dụ gọi API bằng REST Client |
+| [`docs/m3-contract-notes.md`](docs/m3-contract-notes.md) | Ghi chú triển khai/lệch contract của M3 |
+| [`docs/test-checklist.md`](docs/test-checklist.md) | Biên bản test backend + checklist phần cứng |
+| [`docs/PROMPT-backend-complete.md`](docs/PROMPT-backend-complete.md) | Kế hoạch P1/P2 backend |
 
-`ddl-auto: validate` — Hibernate không tự sửa schema; Flyway là nguồn chân lý.
-`baseline-on-migrate: true` — An toàn khi áp lên DB đã có data.
+## Trạng thái tổng
 
-> V1 hiện đã chứa các cột streak/version; V2 dùng `IF NOT EXISTS` nên DB mới sẽ log warning
-> "column already exists" — **vô hại**. Không sửa migration đã chạy (Flyway checksum).
-
-> **Reset sạch:** `docker compose down -v && docker compose up --build -d`
-
-## MQTT contract đang dùng
-
-| Topic | Hướng | Payload mẫu |
-| --- | --- | --- |
-| `office/office-env-01/telemetry` | device → backend | `{"deviceId":"office-env-01","temperature":28.5,"humidity":72,"lux":320.5,"presence":true,"quality":"VALID","airRaw":1450}` |
-| `office/office-ctrl-01/telemetry` | device → backend | `{"deviceId":"office-ctrl-01","busVoltageV":12.1,"light1PowerW":4.8,"light1CurrentMa":397,"quality":"VALID"}` |
-| `office/{deviceId}/status` | device → backend, retained | `{"online":true,"light1":"OFF","fan1":"OFF","buzzer1":"OFF","door1":"CLOSED","mode":"AUTO","fwVersion":"1.0.0"}` |
-| `office/{deviceId}/command` | backend → device | `{"commandId":"CMD-0001","target":"light1","action":"OFF","issuedBy":"user-1"}` |
-| `office/{deviceId}/ack` | device → backend | `{"commandId":"CMD-0001","target":"light1","status":"SUCCESS","state":"OFF","latencyMs":180}` |
-| `office/{deviceId}/config` | backend → device, retained | `{"configId":"CFG-0001","telemetryIntervalSec":5,"servoOpenDeg":90,"servoCloseDeg":0,"issuedBy":"user-1"}` |
-
-- QoS 1 cho telemetry/command/ack/config. Status và config retained.
-- Heartbeat 30s, quá 90s → `OFFLINE` + alert. LWT `{"online":false}` tạo alert ngay.
-- Command timeout 5s (door1 10s), retry tối đa 2 lần → `TIMEOUT`.
-
-## REST API (M3 đã làm)
-
-| Method | Endpoint | Auth | Ghi chú |
-| --- | --- | --- | --- |
-| POST | `/api/auth/login` | Public | Trả `{token, role, userId, expiresIn}` |
-| GET | `/api/stream` | JWT (Bearer/`?token=`) | SSE realtime |
-| GET | `/api/devices` | VIEWER+ | phân trang `page,size,sort` |
-| POST | `/api/devices` | ADMIN | đăng ký thiết bị, trả 201 `REGISTERED`; trùng ID → 409 `DEVICE_EXISTS` |
-| GET | `/api/devices/{id}` | VIEWER+ | chi tiết thiết bị |
-| GET | `/api/devices/{id}/status` | VIEWER+ | trạng thái + actuator + telemetry mới nhất |
-| GET | `/api/devices/{id}/telemetry` | VIEWER+ | `from,to` bắt buộc; tối đa 7 ngày; `size=20` mặc định |
-| GET | `/api/devices/{id}/energy` | VIEWER+ | `raw\|minute\|hour\|day`, tối đa 1000 bucket |
-| GET | `/api/devices/{id}/commands` | VIEWER+ | lịch sử lệnh + ACK |
-| POST | `/api/devices/{id}/commands` | OPERATOR+ | 202, `Idempotency-Key`, `?wait=true` |
-| POST | `/api/devices/{id}/mode` | OPERATOR+ | `{"mode":"MANUAL"}` |
-| PUT | `/api/devices/{id}/config` | OPERATOR+ | publish config retained |
-| POST | `/api/devices/{id}/activate\|lock\|decommission` | ADMIN | lifecycle |
-| GET | `/api/alerts` | VIEWER+ | lọc `status,type,deviceId,from,to` |
-| PATCH | `/api/alerts/{id}/acknowledge` | OPERATOR+ | |
-| GET | `/api/rules` | VIEWER+ | 5 rule mặc định |
-| PUT | `/api/rules/{id}` | ADMIN | sửa ngưỡng |
-| GET | `/api/audit-logs` | ADMIN | nhật ký lệnh/config |
-
-Lỗi chuẩn: `{"error":{"code","message","details","timestamp"}}`.
-Mã lỗi: 400 `VALIDATION_ERROR`, 401 `UNAUTHORIZED`, 403 `FORBIDDEN`, 404 `NOT_FOUND`,
-409 `DEVICE_OFFLINE|DEVICE_NOT_ACTIVE|DEVICE_EXISTS|COMMAND_DUPLICATE|...`, 503 `MQTT_UNAVAILABLE`, 504 `COMMAND_TIMEOUT`.
-
-## Biến môi trường
-
-Copy `.env.example` → `.env` (không commit). Các biến chính:
-
-| Biến | Mặc định / Ghi chú |
+| Hạng mục | Trạng thái |
 | --- | --- |
-| `JWT_SECRET` | **Bắt buộc** — ≥ 32 ký tự; app crash nếu thiếu |
-| `DB_URL` | `jdbc:postgresql://localhost:5433/smartoffice` |
-| `DB_USER` / `DB_PASSWORD` | `smartoffice` / `smartoffice` |
-| `MQTT_BROKER_URL` | `tcp://localhost:1883` |
-| `MQTT_CLIENT_ID` | `smartoffice-backend` |
-| `MQTT_ENABLED` | `true` (test = false) |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` |
-| `MOSQUITTO_PORT` | `1883` — đổi sang `1884` nếu conflict Windows service |
-| `SEED_DEV_USERS` | `false` prod; `true` dev — seed admin/operator1/viewer1 |
-| `ADMIN_PASSWORD` / `OPERATOR_PASSWORD` / `VIEWER_PASSWORD` | Mật khẩu dev users |
+| Contract v1.3 | ✅ |
+| Backend M3 P0 | ✅ 29 test, Docker healthy, Flyway verified |
+| Frontend M4 | 🚧 sẵn sàng bắt đầu |
+| Firmware M1/M2 | ⏳ chưa có trong repo |
+| Test ESP32 thật → backend | ⏳ |
+| Test web → relay thật → ACK | ⏳ |
+| Test mất nguồn/WiFi → offline alert | ⏳ |
+| Mosquitto ACL/credential | ⏳ (M4 phối hợp) |
 
-Khi chạy backend trong Docker, `DB_URL=jdbc:postgresql://postgres:5432/smartoffice`
-và `MQTT_BROKER_URL=tcp://mosquitto:1883` (đã set sẵn trong `docker-compose.yml`).
+## Quy ước contract
+
+- JSON camelCase; timestamp ISO-8601 UTC.
+- `deviceId` trong payload phải trùng topic.
+- Topic: `office/{deviceId}/{telemetry|status|command|ack|config}`.
+- QoS 1; status/config retained; heartbeat 30s; offline 90s.
+- Command timeout 5s (door1 10s), retry 2.
+- Chỉ telemetry `quality=VALID` dùng cho automation/ngưỡng.
+- Mọi thay đổi payload/endpoint phải sửa contract trước.
 
 ## Git workflow
 
-Branch: `feature/backend-complete`. Không push thẳng `main`.
+- `main` là nhánh ổn định; không push thẳng.
+- Mỗi mảng làm nhánh riêng: `feature/backend-*`, `feature/frontend-*`, `feature/firmware-*`.
+- Backend hiện tại: `feature/backend-complete`.
+- Merge qua Pull Request, có review.
+- Mỗi người dùng tài khoản GitHub riêng; không commit secret/`.env`/`target`.
 
-```powershell
-git checkout feature/backend-complete
-# code + test
-git commit -m "feat/fix/docs/test: ..."
-git push origin feature/backend-complete
-```
+## Việc tiếp theo
+
+1. M1/M2 flash firmware thật, test telemetry + command + ACK + door.
+2. M4 làm frontend theo [`docs/frontend-setup.md`](docs/frontend-setup.md).
+3. Test end-to-end: web → backend → relay thật → ACK → UI.
+4. Test mất kết nối: LWT + quá 90s → `DEVICE_OFFLINE`; cắm lại → `ACTIVE`.
+5. Mosquitto ACL/credential cho từng device.
+6. Backend P1: config history, search/filter, audit đầy đủ, retention, rate limit, Testcontainers.
