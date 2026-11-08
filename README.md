@@ -1,193 +1,167 @@
-# Smart Office IoT — Phòng làm việc thông minh
+# SmartOffice – Phòng làm việc thông minh (IoT)
 
-Hệ thống IoT giám sát môi trường và điều khiển thiết bị cho một phòng làm việc:
-ESP32 đọc cảm biến, gửi dữ liệu qua MQTT; backend lưu trữ, sinh cảnh báo, tự động hóa;
-frontend hiển thị dashboard realtime và điều khiển thiết bị.
+Hệ thống giám sát và điều khiển phòng làm việc: thiết bị ESP32 gửi số liệu qua MQTT, backend Spring Boot lưu vào PostgreSQL và đẩy realtime (SSE) lên giao diện web React.
 
-Contract chung của nhóm: [`Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md) **(v1.3)**.
-Đây là nguồn chân lý cho topic, payload, endpoint, enum và mã lỗi.
-
-## Kiến trúc
-
-```text
-┌─────────────────────┐        MQTT        ┌──────────────────┐
-│ M1 — Node A         │ ─────────────────► │                  │
-│ AHT20, BH1750,      │                    │    Mosquitto     │
-│ LD2410C, MQ-135     │ ◄───────────────── │      Broker      │
-└─────────────────────┘                    │                  │
-┌─────────────────────┐        MQTT        │                  │
-│ M2 — Node B         │ ─────────────────► │                  │
-│ relay, servo,       │ ◄───────────────── │                  │
-│ buzzer, INA219 ×2   │                    └────────┬─────────┘
-└─────────────────────┘                             │ MQTT
-                                                    ▼
-                                         ┌─────────────────────┐
-                                         │ M3 — Spring Boot    │
-                                         │ MQTT / DB / REST    │
-                                         │ rule + automation   │
-                                         └──────────┬──────────┘
-                                                    │ JDBC
-                                                    ▼
-                                         ┌─────────────────────┐
-                                         │    PostgreSQL       │
-                                         └──────────┬──────────┘
-                                                    │ REST + SSE
-                                                    ▼
-                                         ┌─────────────────────┐
-                                         │ M4 — Frontend       │
-                                         │ dashboard/control   │
-                                         └─────────────────────┘
+```
+ESP32 (Node A cảm biến, Node B điều khiển)
+        │  MQTT
+        ▼
+   Mosquitto ◄──────► Backend (Spring Boot) ◄──► PostgreSQL
+                            │  REST + SSE
+                            ▼
+                    Frontend (React + Ant Design, Nginx)
 ```
 
-## Thành phần & phân công
+## Cấu trúc thư mục
 
-| Module | Sở hữu | Nội dung | Trạng thái |
-| --- | --- | --- | --- |
-| **M1** | Firmware Node A | ESP32, AHT20 (nhiệt/ẩm), BH1750 (lux), LD2410C (hiện diện), MQ-135 (airRaw), publish telemetry/status | ⏳ chưa có code trong repo / chưa test phần cứng |
-| **M2** | Firmware Node B | ESP32, relay light1/fan1, buzzer, servo + công tắc từ door1, INA219 ×2, nhận command/config, ACK | ⏳ chưa có code trong repo / chưa test phần cứng |
-| **M3** | Backend | Spring Boot, MQTT, PostgreSQL, REST, SSE, auth, rule engine, automation, energy | ✅ P0 xong, 29 test pass |
-| **M4** | Frontend | Login, dashboard realtime, điều khiển, alert, history, energy, rule, quản trị | 🚧 sẵn sàng bắt đầu, chưa có code |
-
-Chi tiết M3: [`docs/m3-backend.md`](docs/m3-backend.md).
-
-## Phần cứng
-
-| Node | Linh kiện |
+| Thư mục | Nội dung |
 | --- | --- |
-| Node A | ESP32, AHT20 (I2C 0x38), BH1750 (chung bus), LD2410C, MQ-135 |
-| Node B | ESP32, relay 5V 2 kênh, servo SG90 + công tắc từ FR3S, buzzer 5V, INA219 ×2 (0x40/0x41) |
-| Nguồn | 12V cho tải, 5V riêng cho logic, chung GND; cầu chì, diode chống xung quạt, tụ 1000µF cho servo |
+| `backend/` | Backend Spring Boot (REST API, MQTT, automation, SSE) |
+| `iot-frontend/` | Giao diện web (React, TypeScript, Vite, Ant Design) |
+| `iot-infra/` | **Docker Compose chạy cả hệ thống**, cấu hình Mosquitto, thiết bị giả |
+| `docs/` | Tài liệu hợp đồng API và hướng dẫn tích hợp |
 
-Chỉ dùng tải DC 12V. Không đấu trực tiếp 220V.
+Cách chạy chính thức là dùng `docker-compose.yml` trong **`iot-infra/`**.
 
-## Cấu trúc repo
+## Yêu cầu
 
-```text
-SmartOffice/
-├── backend/                 # M3 — Spring Boot
-├── docs/                    # contract notes, API, setup, test
-├── infra/mosquitto/         # cấu hình broker dev
-├── docker-compose.yml       # PostgreSQL + Mosquitto + Backend
-├── .env.example             # copy → .env, không commit .env
-├── Contract_chung_...md     # contract v1.3
-├── ERD_...png               # sơ đồ dữ liệu
-└── Kien_truc_IoT_tong_the.png
+- **Docker Desktop** (đang chạy) và **Git**.
+- Không cần cài Node hay Java, mọi thứ build trong Docker.
+- Các cổng sau phải đang trống: `3000`, `8080`, `1883`, `5432`.
+
+## Chạy nhanh (4 bước)
+
+**1. Clone code**
+
+```bash
+git clone https://github.com/Nomishi/SmartOffice.git
+cd SmartOffice
 ```
 
-`frontend/` (M4) và firmware M1/M2 sẽ được bổ sung vào repo hoặc repo riêng theo phân công.
+Nếu code nằm ở nhánh khác `main`, chạy thêm `git checkout <tên-nhánh>`.
 
-## Chạy nhanh toàn hệ thống
+**2. Tạo file `.env`** (file này chứa mật khẩu nên không nằm trên Git)
 
-Yêu cầu: Docker Desktop. Frontend cần thêm Node.js 20+ (xem [`docs/frontend-setup.md`](docs/frontend-setup.md)).
-Chỉ cần Java 17 + Maven nếu chạy backend ngoài Docker.
-
-```powershell
-Copy-Item .env.example .env      # KHÔNG commit .env
-
-docker compose up --build -d
-docker compose ps                # chờ postgres/backend healthy
+```bash
+cd iot-infra
+cp .env.example .env
 ```
 
-| Dịch vụ | Địa chỉ host |
-| --- | --- |
-| Backend REST/SSE | `http://localhost:8080` |
-| Swagger UI | `http://localhost:8080/swagger-ui/index.html` |
-| PostgreSQL | `localhost:5433` (container 5432) |
-| Mosquitto MQTT | `localhost:1883` (hoặc `1884` nếu set `MOSQUITTO_PORT`) |
-| MQTT WebSocket | `localhost:9001` |
-| Frontend dev | `http://localhost:5173` (khi M4 chạy) |
+Trên Windows (PowerShell hoặc CMD) dùng `copy .env.example .env`.
 
-> **Windows:** nếu service Mosquitto có sẵn giữ cổng 1883, set `MOSQUITTO_PORT=1884` trong `.env`.
-> Backend trong Docker vẫn dùng `mosquitto:1883` nội bộ.
+Khi chạy thử trên máy cá nhân, giữ nguyên giá trị mẫu là chạy được. Chỉ cần nhớ:
 
-Muốn backend Docker tự sinh dữ liệu giả cho frontend, thêm `SPRING_PROFILES_ACTIVE=mock` vào `.env`
-rồi `docker compose up -d backend`.
+- `BACKEND_MQTT_PASSWORD` phải **giống hệt** mật khẩu của mục `backend` trong `MQTT_USERS`.
+- `JWT_SECRET` dài từ 32 ký tự trở lên.
+- `SEED_DEV_USERS=true` để có sẵn 3 tài khoản đăng nhập thử.
+- Mật khẩu MQTT không được chứa dấu phẩy, dấu cách hoặc ký tự `$`.
 
-Kiểm tra nhanh:
+**3. Chạy**
 
-```powershell
-Invoke-RestMethod http://localhost:8080/actuator/health
-
-$login = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/auth/login `
-  -ContentType "application/json" `
-  -Body '{"username":"operator1","password":"operatorPassword123!"}'
-$token = $login.token
-
-Invoke-RestMethod http://localhost:8080/api/devices `
-  -Headers @{ Authorization = "Bearer $token" }
+```bash
+docker compose --profile ui --profile mock up -d --build
 ```
 
-Dev users (chỉ seed khi `SEED_DEV_USERS=true` hoặc profile `dev`):
+Lần đầu mất vài phút vì phải build backend và frontend. Kiểm tra:
 
-| Username | Role | Password |
+```bash
+docker compose ps
+```
+
+Chờ các service chuyển sang `healthy` (backend cần khoảng 30 giây đến 1 phút).
+
+**4. Mở giao diện**
+
+http://localhost:3000
+
+| Tài khoản | Mật khẩu | Quyền |
 | --- | --- | --- |
-| `admin` | ADMIN | `adminPassword123!` |
-| `operator1` | OPERATOR | `operatorPassword123!` |
-| `viewer1` | VIEWER | `viewerPassword123!` |
+| `admin` | `adminPassword123!` | Toàn quyền, xem nhật ký, quản lý người dùng |
+| `operator1` | `operatorPassword123!` | Điều khiển thiết bị, xác nhận cảnh báo |
+| `viewer1` | `viewerPassword123!` | Chỉ xem |
 
-## Không có phần cứng thì làm gì?
+Các địa chỉ khác: Swagger của backend tại http://localhost:8080/swagger-ui/index.html.
 
-Backend có profile `mock` giả lập cả Node A + Node B (telemetry 5s, status 30s, ACK ~180ms):
+## Các profile của Docker Compose
 
-```powershell
-cd backend
-$env:JWT_SECRET = "smartoffice-local-secret-at-least-32-chars-long-123"
-$env:SEED_DEV_USERS = "true"
-mvn spring-boot:run -Dspring-boot.run.profiles=mock
+| Lệnh | Chạy những gì |
+| --- | --- |
+| `docker compose up -d` | Mosquitto, PostgreSQL, backend |
+| `--profile ui` | Thêm giao diện web (cổng 3000) |
+| `--profile mock` | Thêm **thiết bị giả** (Node A và Node B) để có dữ liệu khi chưa có phần cứng |
+
+Không bật `SPRING_PROFILES_ACTIVE=mock` của backend, vì tài khoản `backend` bị ACL cấm ghi telemetry. Dữ liệu giả đã có sẵn ở `--profile mock`.
+
+## Lệnh thường dùng
+
+Chạy trong thư mục `iot-infra/`.
+
+| Việc cần làm | Lệnh |
+| --- | --- |
+| Xem trạng thái | `docker compose ps` |
+| Xem log backend | `docker compose logs -f backend` |
+| Tắt hệ thống, **giữ** dữ liệu | `docker compose --profile ui --profile mock down` |
+| Tắt và **xóa sạch** dữ liệu | `docker compose --profile ui --profile mock down -v` |
+| Chỉ build lại frontend | `docker compose --profile ui build frontend` rồi `docker compose --profile ui up -d --no-deps frontend` |
+| Chỉ build lại backend | `docker compose build backend` rồi `docker compose up -d --no-deps backend` |
+| Tắt riêng thiết bị giả | `docker compose stop mock-publisher` |
+
+Sau khi build lại frontend, bấm **Ctrl+F5** trên trình duyệt để xóa cache cũ.
+
+## Phát triển giao diện (tùy chọn)
+
+Cần Node 20 trở lên. Chạy hạ tầng và backend bằng Docker như trên, rồi:
+
+```bash
+cd iot-frontend
+npm install
 ```
 
-Frontend M4 vẫn làm bình thường với mock này; xem [`docs/frontend-setup.md`](docs/frontend-setup.md).
+Tạo file `iot-frontend/.env` với nội dung:
 
-## Tài liệu
+```
+VITE_USE_MOCK=false
+VITE_API_PROXY=http://localhost:8080
+```
 
-| File | Nội dung |
+```bash
+npm run dev      # http://localhost:5173, tự tải lại khi sửa code
+npm run build    # kiểm tra kiểu TypeScript và build
+npm test         # chạy test
+```
+
+Muốn xem giao diện bằng dữ liệu giả mà không cần backend: đặt `VITE_USE_MOCK=true` (tài khoản `admin` / `admin123`).
+
+## Nối thiết bị ESP32 thật
+
+1. Tắt thiết bị giả: `docker compose stop mock-publisher`.
+2. Thêm tài khoản cho từng node vào `MQTT_USERS` trong `.env`, giữ nguyên mục `backend`. Ví dụ: `backend:...,office-env-01:matkhau1,office-ctrl-01:matkhau2`.
+3. Tạo lại Mosquitto: `docker compose up -d --force-recreate mosquitto`.
+4. Trong firmware: trỏ MQTT tới **IP máy chạy Docker**, cổng `1883`, username là `deviceId` (`office-env-01` hoặc `office-ctrl-01`), kèm mật khẩu ở bước 2.
+
+Máy tính và ESP32 phải cùng mạng, và tường lửa phải cho phép cổng 1883. Topic và định dạng bản tin xem trong `docs/` và `iot-infra/README.md`.
+
+## Xử lý sự cố
+
+| Triệu chứng | Nguyên nhân và cách xử lý |
 | --- | --- |
-| [`Contract_chung_...md`](Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md) | Contract v1.3: topic, payload, API, enum, lỗi |
-| [`docs/m3-backend.md`](docs/m3-backend.md) | Chi tiết backend M3: chạy, auth, SSE, Flyway, API, test |
-| [`docs/frontend-setup.md`](docs/frontend-setup.md) | Setup frontend M4: Node/Vite, env, login, SSE |
-| [`docs/m1-m2-test-guide.md`](docs/m1-m2-test-guide.md) | Test firmware M1/M2 với broker + backend |
-| [`docs/frontend-integration.md`](docs/frontend-integration.md) | Hợp đồng API/SSE chi tiết cho M4 |
-| [`docs/m3-api.http`](docs/m3-api.http) | Ví dụ gọi API bằng REST Client |
-| [`docs/m3-contract-notes.md`](docs/m3-contract-notes.md) | Ghi chú triển khai/lệch contract của M3 |
-| [`docs/test-checklist.md`](docs/test-checklist.md) | Biên bản test backend + checklist phần cứng |
-| [`docs/PROMPT-backend-complete.md`](docs/PROMPT-backend-complete.md) | Kế hoạch P1/P2 backend |
+| `Thiếu BACKEND_MQTT_PASSWORD...` hoặc `Thiếu JWT_SECRET...` | Chưa có hai biến này trong `iot-infra/.env`. Copy lại từ `.env.example`. |
+| Backend cứ `Restarting`, log có `password authentication failed for user "iot"` | Volume Postgres còn giữ mật khẩu cũ do bạn đã đổi `.env` sau lần chạy đầu. Chạy `down -v` rồi `up` lại (mất dữ liệu DB). |
+| Backend log có `Not authorized` từ MQTT | `BACKEND_MQTT_PASSWORD` khác mật khẩu của mục `backend` trong `MQTT_USERS`. Sửa cho trùng rồi `docker compose up -d --force-recreate mosquitto backend`. |
+| Đăng nhập báo "Sai tên đăng nhập hoặc mật khẩu" | Gõ sai mật khẩu (có dấu `!` ở cuối, phân biệt hoa thường), hoặc thiếu `SEED_DEV_USERS=true` khi DB còn trống. |
+| Giao diện hiện Offline, không có số liệu | Chưa bật thiết bị giả. Chạy `docker compose --profile mock up -d mock-publisher`. |
+| `mosquitto` báo `Restarting` | Kiểm tra `MQTT_USERS`: mật khẩu có dấu cách, dấu phẩy hay `$`. File `mosquitto/entrypoint.sh` phải kết thúc dòng kiểu **LF** (repo đã có `.gitattributes` để tự giữ LF). |
+| Báo cổng đã bị chiếm | Máy đang chạy Postgres hay Mosquitto riêng. Tắt chúng, hoặc đổi cổng bên trái trong phần `ports` của `docker-compose.yml`. |
+| Giao diện vẫn là bản cũ | Bấm Ctrl+F5. |
+| `grep` không nhận ra trên PowerShell | Dùng `Select-String`, ví dụ `docker compose logs backend 2>&1 \| Select-String "ERROR"`. |
 
-## Trạng thái tổng
+## Trước khi triển khai thật
 
-| Hạng mục | Trạng thái |
-| --- | --- |
-| Contract v1.3 | ✅ |
-| Backend M3 P0 | ✅ 29 test, Docker healthy, Flyway verified |
-| Frontend M4 | 🚧 sẵn sàng bắt đầu |
-| Firmware M1/M2 | ⏳ chưa có trong repo |
-| Test ESP32 thật → backend | ⏳ |
-| Test web → relay thật → ACK | ⏳ |
-| Test mất nguồn/WiFi → offline alert | ⏳ |
-| Mosquitto ACL/credential | ⏳ (M4 phối hợp) |
+Các giá trị dưới đây chỉ dành cho máy phát triển:
 
-## Quy ước contract
-
-- JSON camelCase; timestamp ISO-8601 UTC.
-- `deviceId` trong payload phải trùng topic.
-- Topic: `office/{deviceId}/{telemetry|status|command|ack|config}`.
-- QoS 1; status/config retained; heartbeat 30s; offline 90s.
-- Command timeout 5s (door1 10s), retry 2.
-- Chỉ telemetry `quality=VALID` dùng cho automation/ngưỡng.
-- Mọi thay đổi payload/endpoint phải sửa contract trước.
-
-## Git workflow
-
-- `main` là nhánh ổn định; không push thẳng.
-- Mỗi mảng làm nhánh riêng: `feature/backend-*`, `feature/frontend-*`, `feature/firmware-*`.
-- Backend hiện tại: `feature/backend-complete`.
-- Merge qua Pull Request, có review.
-- Mỗi người dùng tài khoản GitHub riêng; không commit secret/`.env`/`target`.
-
-## Việc tiếp theo
-
-1. M1/M2 flash firmware thật, test telemetry + command + ACK + door.
-2. M4 làm frontend theo [`docs/frontend-setup.md`](docs/frontend-setup.md).
-3. Test end-to-end: web → backend → relay thật → ACK → UI.
-4. Test mất kết nối: LWT + quá 90s → `DEVICE_OFFLINE`; cắm lại → `ACTIVE`.
-5. Mosquitto ACL/credential cho từng device.
-6. Backend P1: config history, search/filter, audit đầy đủ, retention, rate limit, Testcontainers.
+- Đặt `SEED_DEV_USERS=false` và đổi mật khẩu 3 tài khoản mặc định.
+- Đặt `JWT_SECRET` thành chuỗi ngẫu nhiên riêng, ví dụ `openssl rand -base64 48`.
+- Đổi toàn bộ mật khẩu trong `.env` (Postgres, MQTT).
+- Bỏ các dòng mở cổng `5432` (Postgres) và `8080` (backend) trong `docker-compose.yml`.
+- Tắt tự đăng ký thiết bị lạ ở backend (`auto-register-unknown-devices`).
+- **Không commit file `.env`** (đã nằm trong `.gitignore`).

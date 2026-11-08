@@ -42,33 +42,54 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 16 }}>
-      <Card style={{ width: '100%', maxWidth: 380 }}>
-        <Typography.Title level={4} style={{ marginTop: 0 }}>
-          Đăng nhập
-        </Typography.Title>
-        {USE_MOCK && (
-          <Alert
-            style={{ marginBottom: 16 }}
-            type="info"
-            showIcon
-            message="Đang chạy dữ liệu giả"
-            description="admin / admin123, operator1 / operator123, viewer1 / viewer123"
-          />
-        )}
-        {error && <Alert style={{ marginBottom: 16 }} type="error" showIcon message={error} />}
-        <Form layout="vertical" onFinish={onFinish}>
-          <Form.Item name="username" label="Tên đăng nhập" rules={[{ required: true, message: 'Nhập tên đăng nhập' }]}>
-            <Input autoFocus autoComplete="username" />
-          </Form.Item>
-          <Form.Item name="password" label="Mật khẩu" rules={[{ required: true, message: 'Nhập mật khẩu' }]}>
-            <Input.Password autoComplete="current-password" />
-          </Form.Item>
-          <Button type="primary" htmlType="submit" block loading={loading} disabled={cooldown > 0}>
-            {cooldown > 0 ? `Thử lại sau ${cooldown} giây` : 'Đăng nhập'}
-          </Button>
-        </Form>
-      </Card>
+    <div className="login-wrap">
+      <aside className="login-hero">
+        <div className="brand">
+          <span className="brand-logo" aria-hidden>💡</span>
+          <span>Phòng làm việc thông minh</span>
+        </div>
+        <div>
+          <h1>Giám sát và điều khiển phòng làm việc, mọi lúc mọi nơi</h1>
+          <p>Theo dõi nhiệt độ, độ ẩm, ánh sáng, chất lượng không khí và điều khiển đèn, quạt, cửa theo thời gian thực.</p>
+          <ul className="login-features">
+            <li><span className="dot" aria-hidden>📈</span>Số liệu cảm biến cập nhật liên tục</li>
+            <li><span className="dot" aria-hidden>🎛️</span>Điều khiển thiết bị, chế độ AUTO / MANUAL</li>
+            <li><span className="dot" aria-hidden>🔔</span>Cảnh báo tức thì khi vượt ngưỡng</li>
+          </ul>
+        </div>
+        <div className="login-foot">SmartOffice · IoT</div>
+      </aside>
+      <main className="login-form-side">
+        <Card className="login-card">
+          <Typography.Title level={3} style={{ marginTop: 0, marginBottom: 4 }}>
+            Chào mừng trở lại
+          </Typography.Title>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 20 }}>
+            Đăng nhập để tiếp tục
+          </Typography.Paragraph>
+          {USE_MOCK && (
+            <Alert
+              style={{ marginBottom: 16 }}
+              type="info"
+              showIcon
+              message="Đang chạy dữ liệu giả"
+              description="admin / admin123, operator1 / operator123, viewer1 / viewer123"
+            />
+          )}
+          {error && <Alert style={{ marginBottom: 16 }} type="error" showIcon message={error} />}
+          <Form layout="vertical" onFinish={onFinish} size="large">
+            <Form.Item name="username" label="Tên đăng nhập" rules={[{ required: true, message: 'Nhập tên đăng nhập' }]}>
+              <Input autoFocus autoComplete="username" prefix={<span aria-hidden>👤</span>} />
+            </Form.Item>
+            <Form.Item name="password" label="Mật khẩu" rules={[{ required: true, message: 'Nhập mật khẩu' }]}>
+              <Input.Password autoComplete="current-password" prefix={<span aria-hidden>🔒</span>} />
+            </Form.Item>
+            <Button type="primary" htmlType="submit" block loading={loading} disabled={cooldown > 0}>
+              {cooldown > 0 ? `Thử lại sau ${cooldown} giây` : 'Đăng nhập'}
+            </Button>
+          </Form>
+        </Card>
+      </main>
     </div>
   );
 }

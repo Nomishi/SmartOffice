@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Button, Dropdown, Grid, Layout, Menu, Space, Tag, Typography } from 'antd';
+import { Avatar, Button, Dropdown, Grid, Layout, Menu, Space, Tag } from 'antd';
 import { useAuth } from '../auth/AuthContext';
 import { can } from '../auth/permissions';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
@@ -29,30 +29,27 @@ export default function AppLayout() {
     ...(can.manageUsers(user?.role) ? [{ key: '/users', label: <Link to="/users">Người dùng</Link> }] : []),
   ];
 
+  const initial = (user?.username ?? '?').charAt(0).toUpperCase();
+
   return (
     <Layout style={{ minHeight: '100vh', minWidth: 0 }}>
-      <Header style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 24, paddingInline: isMobile ? 12 : 50 }}>
+      <Header className="app-header" style={{ gap: isMobile ? 8 : 24, paddingInline: isMobile ? 12 : 32 }}>
         {isMobile && (
           <Dropdown trigger={['click']} menu={{ items, selectedKeys: [location.pathname] }}>
             <Button size="small" aria-label="Mở menu">☰</Button>
           </Dropdown>
         )}
-        <Typography.Text strong style={{ color: '#fff', whiteSpace: 'nowrap' }}>
-          {isMobile ? '💡 IoT' : 'Phòng làm việc thông minh'}
-        </Typography.Text>
+        <div className="brand">
+          <span className="brand-logo" aria-hidden>💡</span>
+          <span>{isMobile ? 'IoT' : 'Phòng làm việc thông minh'}</span>
+        </div>
         {isMobile ? (
           <div style={{ flex: 1 }} />
         ) : (
-          <Menu
-            theme="dark"
-            mode="horizontal"
-            selectedKeys={[location.pathname]}
-            items={items}
-            style={{ flex: 1, minWidth: 0 }}
-          />
+          <Menu mode="horizontal" selectedKeys={[location.pathname]} items={items} />
         )}
-        <Space size={isMobile ? 4 : 8}>
-          <Tag color="blue" style={{ marginInlineEnd: 0 }}>{user?.role}</Tag>
+        <Space size={isMobile ? 4 : 10}>
+          <Tag color="geekblue" style={{ marginInlineEnd: 0 }}>{user?.role}</Tag>
           <Dropdown
             trigger={['click']}
             menu={{
@@ -63,11 +60,17 @@ export default function AppLayout() {
               onClick: ({ key }) => (key === 'pw' ? setPwOpen(true) : logout()),
             }}
           >
-            <Button size="small">{user?.username} ▾</Button>
+            <Button type="text" style={{ paddingInline: 6, height: 40 }}>
+              <Space size={8}>
+                <Avatar size={28} style={{ background: '#4f46e5' }}>{initial}</Avatar>
+                {!isMobile && <span>{user?.username}</span>}
+                <span aria-hidden>▾</span>
+              </Space>
+            </Button>
           </Dropdown>
         </Space>
       </Header>
-      <Content style={{ padding: isMobile ? 12 : 24, maxWidth: 1200, width: '100%', margin: '0 auto', minWidth: 0 }}>
+      <Content className="app-content" style={{ padding: isMobile ? 12 : 24, maxWidth: 1200, width: '100%', margin: '0 auto', minWidth: 0 }}>
         <Outlet />
       </Content>
       <ChangePasswordModal open={pwOpen} onClose={() => setPwOpen(false)} />
