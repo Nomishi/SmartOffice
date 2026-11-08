@@ -142,6 +142,7 @@ Frontend M4 vẫn làm bình thường với mock này; xem [`docs/frontend-setu
 | [`Contract_chung_...md`](Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md) | Contract v1.3: topic, payload, API, enum, lỗi |
 | [`docs/m3-backend.md`](docs/m3-backend.md) | Chi tiết backend M3: chạy, auth, SSE, Flyway, API, test |
 | [`docs/frontend-setup.md`](docs/frontend-setup.md) | Setup frontend M4: Node/Vite, env, login, SSE |
+| [`docs/m1-m2-test-guide.md`](docs/m1-m2-test-guide.md) | Test firmware M1/M2 với broker + backend |
 | [`docs/frontend-integration.md`](docs/frontend-integration.md) | Hợp đồng API/SSE chi tiết cho M4 |
 | [`docs/m3-api.http`](docs/m3-api.http) | Ví dụ gọi API bằng REST Client |
 | [`docs/m3-contract-notes.md`](docs/m3-contract-notes.md) | Ghi chú triển khai/lệch contract của M3 |
