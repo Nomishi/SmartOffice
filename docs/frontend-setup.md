@@ -104,6 +104,14 @@ MOSQUITTO_PORT=1884
 
 Backend trong Docker vẫn dùng `mosquitto:1883` nội bộ; biến này chỉ đổi port host.
 
+Muốn có telemetry/ACK giả realtime cho dashboard, thêm vào `.env`:
+
+```env
+SPRING_PROFILES_ACTIVE=mock
+```
+
+rồi `docker compose up -d backend`. Mock sẽ publish telemetry 5s, status 30s, ACK ~180ms.
+
 ### Cách B — Chạy backend local (cần Java 17 + Maven + Postgres)
 
 ```powershell

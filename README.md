@@ -100,6 +100,9 @@ docker compose ps                # chờ postgres/backend healthy
 > **Windows:** nếu service Mosquitto có sẵn giữ cổng 1883, set `MOSQUITTO_PORT=1884` trong `.env`.
 > Backend trong Docker vẫn dùng `mosquitto:1883` nội bộ.
 
+Muốn backend Docker tự sinh dữ liệu giả cho frontend, thêm `SPRING_PROFILES_ACTIVE=mock` vào `.env`
+rồi `docker compose up -d backend`.
+
 Kiểm tra nhanh:
 
 ```powershell

@@ -52,6 +52,7 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-smartoffice}
       MQTT_BROKER_URL: tcp://mosquitto:1883
       MQTT_ENABLED: ${MQTT_ENABLED:-true}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
       SEED_DEV_USERS: ${SEED_DEV_USERS:-true}
       JWT_SECRET: ${JWT_SECRET:-smartoffice-super-secret-dev-jwt-key-minimum-256-bits-length-required-for-hs256!}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-adminPassword123!}
