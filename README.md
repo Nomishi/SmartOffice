@@ -138,8 +138,15 @@ mvn verify
 ### 5. Swagger UI
 
 ```
-http://localhost:8080/swagger-ui.html
+http://localhost:8080/swagger-ui/index.html
 ```
+
+## Frontend M4
+
+- Hướng dẫn setup frontend (Node/Vite, env, login, SSE, checklist): [`docs/frontend-setup.md`](docs/frontend-setup.md)
+- Hợp đồng API chi tiết cho M4: [`docs/frontend-integration.md`](docs/frontend-integration.md)
+- Swagger: `http://localhost:8080/swagger-ui/index.html`
+- Frontend không cần Java/Maven/Postgres/Mosquitto; chỉ cần Node 20+ và backend đang chạy.
 
 ## Auth & RBAC
 

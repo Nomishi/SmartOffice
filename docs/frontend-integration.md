@@ -2,6 +2,8 @@
 
 Tài liệu hướng dẫn đội Frontend (M4) tích hợp với hệ thống Backend Spring Boot (M3) của dự án **SmartOffice - Phòng làm việc thông minh IoT**.
 
+> Setup môi trường frontend (Node/Vite, env, chạy dev): xem [`frontend-setup.md`](frontend-setup.md).
+
 ---
 
 ## 1. Thông tin chung & Endpoint cơ sở
