@@ -100,27 +100,31 @@ Backend Spring Boot 3.5.16 / Java 17 / Maven đã có:
 - Rule engine: TEMP_HIGH, AIR_BAD, ABSENCE_OFF, DOOR_OPEN_LIMIT, ENERGY_WASTE, DEVICE_OFFLINE,
   SENSOR_FAULT; automation không ghi đè `MANUAL`; chỉ dùng telemetry `VALID`.
 - Mock profile `mock` giả lập cả M1+M2 và trả ACK thật.
-- **15 test đang xanh**: context load, API smoke, rule validation, energy, device quality.
+- **29 test đang xanh**: context, API smoke, auth/RBAC, SSE, rule, energy, device quality.
+- P0 đã xong: Auth JWT/RBAC/user, SSE `/api/stream`, OpenAPI/Swagger, Flyway V1+V2 + validate,
+  Dockerfile + compose backend healthy. Đã verify PostgreSQL 16 sạch và login qua Docker.
+- Còn P1/P2: tìm kiếm/lọc device, GET config history, audit đầy đủ, Clock tests cho automation,
+  retention, rate limit, Testcontainers, Room/Schedule.
 - Mô hình dữ liệu hiện tại: `Room` chỉ là `roomId` string, `Schedule`/`Role` chưa có entity riêng,
   `DeviceConfig` là entity bổ sung để lưu lịch sử config — xem `docs/m3-contract-notes.md` mục 4.
 - Đã test live: command→ACK 180ms, idempotency 409, TEMP_HIGH + auto-resolve, LWT offline alert,
   SENSOR_FAULT, automation phòng trống → tự OFF.
 
-**Còn thiếu / chưa đủ để frontend làm việc** (đây là phạm vi bạn phải hoàn thiện):
+**Còn thiếu / chưa đủ để frontend làm việc** — P0 đã xong, chỉ còn P1/P2:
 
-- Chưa có **auth JWT + RBAC + user management**; API đang dùng header tạm `X-User-Id`.
-- Chưa có **realtime (SSE/WebSocket)** cho dashboard.
-- Chưa có **OpenAPI/Swagger**, tài liệu tích hợp frontend.
-- Chưa có **Flyway migration**; đang `ddl-auto: update`.
-- Chưa có `Dockerfile` backend, compose chưa chạy full stack.
-- Test automation/offline/command lifecycle chưa đầy đủ; chưa test MQTT bằng broker thật trong CI.
-- Chưa có retention dữ liệu telemetry, rate limit, một số endpoint lifecycle còn sơ sài.
-- Chưa có `Room`/`Schedule` entity; `Command.issuedBy` là string, không FK — xem
-  `docs/m3-contract-notes.md` mục 4 trước khi quyết định mở rộng.
+- `POST /api/devices` đã có; còn tìm kiếm/lọc nâng cao và GET lịch sử config.
+- Retention telemetry, rate limit 429, Prometheus metrics.
+- Clock tests đầy đủ cho automation/offline/sensor fault.
+- Testcontainers Flyway/PostgreSQL trong CI.
+- `Room`/`Schedule` entity (MVP dùng `roomId` string).
+
 
 ---
 
 ## 4. Việc phải làm
+
+> **P0 đã hoàn thành và đã verify** (auth, SSE, OpenAPI, Flyway, Docker). Không làm lại P0 trừ khi
+> phát hiện regression. Tập trung P1/P2 bên dưới.
 
 ### P0 — Bắt buộc, làm trước (frontend cần ngay)
 
@@ -191,7 +195,7 @@ Backend Spring Boot 3.5.16 / Java 17 / Maven đã có:
 
 #### 4.7 API completeness
 
-- `POST /api/devices` (Admin đăng ký device), lọc/tìm kiếm danh sách device, `GET /config` history.
+- `POST /api/devices` đã có (201 REGISTERED, trùng ID 409); bổ sung lọc/tìm kiếm, GET config history.
 - Kiểm tra toàn bộ validate: phân trang, from/to ≤ 7 ngày, bucket ≤ 1000, target/action, rule params.
 - Bổ sung audit log cho mọi thao tác ghi (command, config, rule, alert ack, mode, lifecycle).
 - Idempotency-Key chịu được request đồng thời (unique constraint + xử lý DataIntegrityViolation).

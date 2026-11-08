@@ -88,6 +88,7 @@ Event trả về định dạng JSON camelCase: `{"type":"...", "data":{...}, "t
 ### Quản lý thiết bị & Điều khiển (`/api/devices`)
 
 - `GET /api/devices`: Danh sách thiết bị (phân trang `page`, `size`, `sort`).
+- `POST /api/devices`: Đăng ký thiết bị mới (Admin). Body `{deviceId,name,type,roomId?,fwVersion?}`; trả `201` với status `REGISTERED`, trùng ID → `409 DEVICE_EXISTS`. Sau đó gọi `/activate` để chuyển `ACTIVE`.
 - `GET /api/devices/{id}`: Chi tiết thiết bị.
 - `GET /api/devices/{id}/status`: Trạng thái tức thời, actuators, telemetry mới nhất.
 - `GET /api/devices/{id}/telemetry?from=...&to=...&page=0&size=20`: Lịch sử đo (tối đa 7 ngày, size mặc định 20).
@@ -97,7 +98,7 @@ Event trả về định dạng JSON camelCase: `{"type":"...", "data":{...}, "t
   - Mặc định trả `202 Accepted`. Truyền `?wait=true` để chờ kết quả tối đa 10s.
   - Phân quyền: `ADMIN`, `OPERATOR`.
 - `POST /api/devices/{id}/mode`: Đổi chế độ (`{"mode":"AUTO"|"MANUAL"}`). Phân quyền: `ADMIN`, `OPERATOR`.
-- `PUT /api/devices/{id}/config`: Cấu hình tần suất (`telemetryIntervalSec`, `heartbeatIntervalSec`). Phân quyền: `ADMIN`, `OPERATOR`.
+- `PUT /api/devices/{id}/config`: Cấu hình tham số (`telemetryIntervalSec`, `servoOpenDeg`, `servoCloseDeg`). Phân quyền: `ADMIN`, `OPERATOR`.
 - `POST /api/devices/{id}/activate|lock|decommission`: Quản lý vòng đời thiết bị. Phân quyền: `ADMIN`.
 
 ### Cảnh báo (`/api/alerts`)

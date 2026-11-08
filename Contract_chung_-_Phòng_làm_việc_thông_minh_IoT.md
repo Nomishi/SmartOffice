@@ -8,6 +8,7 @@ Tài liệu thống nhất giao diện kết nối giữa M1, M2, M3, M4. Mọi 
 - Thêm `resolvedAt` (nullable) cho Alert: alert tự đóng khi điều kiện hết; `GET /api/alerts` mặc định ẩn alert đã resolved, thêm `?includeResolved=true` để xem.
 - Thêm mã lỗi `503 MQTT_UNAVAILABLE` khi backend không publish được do broker mất kết nối.
 - Thêm entity `DeviceConfig` để lưu lịch sử config/ACK.
+- Bổ sung `POST /api/devices` (Admin, trả `201 REGISTERED`) và mã lỗi `409 DEVICE_EXISTS`.
 - Ghi rõ MVP dùng `roomId` string (chưa có bảng `Room`); chưa có API `Schedule`.
 - Làm rõ phân trang telemetry mặc định `size=20` (client có thể truyền tối đa 100).
 
@@ -286,6 +287,14 @@ Xác thực: header `Authorization: Bearer <JWT>`. Realtime: WebSocket hoặc SS
  "page":0,"size":20,"total":2,"totalPages":1}
 ```
 
+**POST `/api/devices`** (Admin) body `{"deviceId":"office-env-02","name":"Node A 2","type":"ENV","roomId":"room-01","fwVersion":"1.0.0"}` → 201
+
+```json
+{"deviceId":"office-env-02","name":"Node A 2","type":"ENV","status":"REGISTERED","mode":"AUTO","roomId":"room-01","online":false,"fwVersion":"1.0.0","lastSeenAt":null}
+```
+
+Thiết bị mới ở `REGISTERED`, sau đó Admin gọi `/activate` để chuyển `ACTIVE`. Trùng `deviceId` → 409 `DEVICE_EXISTS`.
+
 **GET `/api/devices/{id}/status`** → 200
 
 ```json
@@ -391,6 +400,7 @@ Xem cấu trúc `Rule` đầy đủ ở mục 9.1.
 | 409 | `DEVICE_OFFLINE` | Thiết bị `ACTIVE` nhưng quá 90 giây không có status/telemetry |
 | 409 | `DEVICE_LOCKED` | Thiết bị `LOCKED` |
 | 409 | `DEVICE_DECOMMISSIONED` | Thiết bị `DECOMMISSIONED` |
+| 409 | `DEVICE_EXISTS` | Đăng ký trùng `deviceId` |
 | 409 | `COMMAND_DUPLICATE` | Cùng `Idempotency-Key` nhưng body khác (target/action khác) |
 | 409 | `CONFIG_CONFLICT` | Đang có config `PENDING` chưa ACK mà gửi config mới |
 | 429 | `RATE_LIMITED` | Quá số request cho phép |

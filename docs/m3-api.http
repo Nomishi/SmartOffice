@@ -37,6 +37,23 @@ Content-Type: application/json
 GET {{base}}/api/devices
 Authorization: Bearer {{token}}
 
+### Đăng ký thiết bị mới (Admin) — trả 201 REGISTERED
+POST {{base}}/api/devices
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "deviceId": "office-env-02",
+  "name": "Node A - môi trường 2",
+  "type": "ENV",
+  "roomId": "room-01",
+  "fwVersion": "1.0.0"
+}
+
+### Kích hoạt thiết bị vừa đăng ký
+POST {{base}}/api/devices/office-env-02/activate
+Authorization: Bearer {{adminToken}}
+
 ### Chi tiết thiết bị
 GET {{base}}/api/devices/{{ctrl}}
 Authorization: Bearer {{token}}

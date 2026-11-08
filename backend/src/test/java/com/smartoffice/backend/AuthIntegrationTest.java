@@ -100,6 +100,18 @@ class AuthIntegrationTest {
     }
 
     @Test
+    @WithMockUser(username = "viewer1", roles = {"VIEWER"})
+    void viewerCannotRegisterDeviceForbidden() throws Exception {
+        mockMvc.perform(post("/api/devices")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"deviceId":"office-viewer-test","name":"X","type":"ENV"}
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
+    }
+
+    @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void adminCanCreateAndListUsers() throws Exception {
         CreateUserRequest req = new CreateUserRequest("testuser1", "secret123", Role.OPERATOR);

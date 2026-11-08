@@ -23,7 +23,7 @@ Mọi thay đổi payload/endpoint phải sửa contract trước.
 | OpenAPI/Swagger + `docs/frontend-integration.md` | ✅ Xong |
 | Flyway V1+V2 migration, `ddl-auto: validate` | ✅ Xong |
 | Dockerfile + service backend trong docker-compose | ✅ Xong |
-| `mvn verify` xanh (27 test pass) | ✅ Xanh |
+| `mvn verify` xanh (29 test pass) | ✅ Xanh |
 | `docker compose up --build` → backend healthy | ✅ Chạy được |
 | Login → JWT → GET /api/devices hoạt động | ✅ Verified |
 | Flyway trên PostgreSQL 16 sạch | ✅ Verified |
@@ -175,11 +175,14 @@ Events được push mỗi khi có: telemetry mới, thay đổi trạng thái t
 
 | File | Nội dung |
 | --- | --- |
-| `V1__init.sql` | Tạo toàn bộ schema (users, devices, telemetry, power_readings, commands, alerts, rules, device_configs, audit_logs) |
+| `V1__init.sql` | Tạo toàn bộ schema (users, devices, telemetry, power_reading, commands, alerts, rules, device_configs, audit_logs) |
 | `V2__add_device_streaks_and_version.sql` | `ADD COLUMN IF NOT EXISTS` cho các cột streak/version — idempotent cho dev DB đã chạy V1 cũ |
 
 `ddl-auto: validate` — Hibernate không tự sửa schema; Flyway là nguồn chân lý.
 `baseline-on-migrate: true` — An toàn khi áp lên DB đã có data.
+
+> V1 hiện đã chứa các cột streak/version; V2 dùng `IF NOT EXISTS` nên DB mới sẽ log warning
+> "column already exists" — **vô hại**. Không sửa migration đã chạy (Flyway checksum).
 
 > **Reset sạch:** `docker compose down -v && docker compose up --build -d`
 
@@ -205,6 +208,7 @@ Events được push mỗi khi có: telemetry mới, thay đổi trạng thái t
 | POST | `/api/auth/login` | Public | Trả `{token, role, userId, expiresIn}` |
 | GET | `/api/stream` | JWT (Bearer/`?token=`) | SSE realtime |
 | GET | `/api/devices` | VIEWER+ | phân trang `page,size,sort` |
+| POST | `/api/devices` | ADMIN | đăng ký thiết bị, trả 201 `REGISTERED`; trùng ID → 409 `DEVICE_EXISTS` |
 | GET | `/api/devices/{id}` | VIEWER+ | chi tiết thiết bị |
 | GET | `/api/devices/{id}/status` | VIEWER+ | trạng thái + actuator + telemetry mới nhất |
 | GET | `/api/devices/{id}/telemetry` | VIEWER+ | `from,to` bắt buộc; tối đa 7 ngày; `size=20` mặc định |
@@ -222,7 +226,7 @@ Events được push mỗi khi có: telemetry mới, thay đổi trạng thái t
 
 Lỗi chuẩn: `{"error":{"code","message","details","timestamp"}}`.
 Mã lỗi: 400 `VALIDATION_ERROR`, 401 `UNAUTHORIZED`, 403 `FORBIDDEN`, 404 `NOT_FOUND`,
-409 `DEVICE_OFFLINE|DEVICE_NOT_ACTIVE|COMMAND_DUPLICATE|...`, 503 `MQTT_UNAVAILABLE`, 504 `COMMAND_TIMEOUT`.
+409 `DEVICE_OFFLINE|DEVICE_NOT_ACTIVE|DEVICE_EXISTS|COMMAND_DUPLICATE|...`, 503 `MQTT_UNAVAILABLE`, 504 `COMMAND_TIMEOUT`.
 
 ## Biến môi trường
 

@@ -1,6 +1,6 @@
 # Test checklist & biên bản test — M3 Backend
 
-- Ngày chạy: **06–07/11/2026**
+- Ngày chạy: **06–08/11/2026**
 - Môi trường: Windows, Java 17 (Temurin), Maven 3.9, Spring Boot 3.5.16,
   PostgreSQL 16 (Docker), Mosquitto 2 (Docker + service Windows).
 - Backend chạy profile `mock` (giả lập M1+M2) tại `http://localhost:8080`.
@@ -17,29 +17,38 @@ Kết quả tại thời điểm ghi:
 | Test class | Số test | Kết quả |
 | --- | ---: | --- |
 | `SmartOfficeApplicationTests` | 1 | PASS |
-| `ApiSmokeTest` | 8 | PASS |
-| `AuthIntegrationTest` | 8 | PASS |
-| `StreamIntegrationTest` | 2 | PASS |
+| `ApiSmokeTest` | 9 | PASS |
+| `AuthIntegrationTest` | 10 | PASS |
+| `StreamIntegrationTest` | 3 | PASS |
 | `RuleServiceTest` | 3 | PASS |
 | `EnergyServiceTest` | 1 | PASS |
 | `DeviceServiceTest` | 2 | PASS |
-| **Tổng** | **25** | **0 failure, 0 error** |
-
-`AuthIntegrationTest` kiểm tra: unauthenticated request → 401 `UNAUTHORIZED`, login đúng trả JWT token + role + expiresIn 3600, login sai mật khẩu → 401 `UNAUTHORIZED`, viewer đọc dữ liệu được nhưng gửi lệnh bị chặn 403 `FORBIDDEN`, operator gửi lệnh được và bị chặn khi xem danh sách users (403 `FORBIDDEN`), admin tạo user mới và xem danh sách users thành công.
-`StreamIntegrationTest` kiểm tra: SSE stream `/api/stream` yêu cầu xác thực (401), user đã xác thực kết nối nhận event thành công và tăng active subscriber count.
+| **Tổng** | **29** | **0 failure, 0 error** |
 
 `ApiSmokeTest` kiểm tra: list devices seed, list rules seed, alerts endpoint, status endpoint,
 telemetry thiếu from/to → 400 `VALIDATION_ERROR`, telemetry device không tồn tại → 404 `NOT_FOUND`,
-telemetry mặc định `size=20`, command tới device offline → 409 `DEVICE_OFFLINE`.
-`DeviceServiceTest` kiểm tra `SUSPECT` phá chuỗi INVALID/VALID và `VALID + presence=true` xoá `emptySince`.
+telemetry mặc định `size=20`, command tới device offline → 409 `DEVICE_OFFLINE`,
+đăng ký device mới 201 `REGISTERED`, trùng `deviceId` → 409 `DEVICE_EXISTS`.
+`AuthIntegrationTest` kiểm tra: 401 khi chưa đăng nhập, login đúng/sai, JWT thật cho viewer/operator,
+viewer bị 403 khi gửi lệnh và khi đăng ký device, admin tạo/list user.
+`StreamIntegrationTest` kiểm tra: SSE yêu cầu auth (401), user đã xác thực kết nối được,
+`?token=` chỉ hoạt động với `/api/stream`.
 
 ## 2. Test live qua MQTT + REST (mock)
+
+### 2.0 Lấy JWT
+
+```powershell
+$login = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/auth/login `
+  -ContentType "application/json" -Body '{"username":"admin","password":"adminPassword123!"}'
+$token = $login.token
+```
 
 ### 2.1 Command → ACK → actuator
 
 ```powershell
 curl.exe -X POST "http://localhost:8080/api/devices/office-ctrl-01/commands?wait=true" `
-  -H "Content-Type: application/json" -H "X-User-Id: 2" `
+  -H "Content-Type: application/json" -H "Authorization: Bearer $token" `
   -H "Idempotency-Key: test-key-001" -d '{"target":"light1","action":"ON"}'
 ```
 
@@ -120,6 +129,15 @@ AUTO OFF FOUND: CMD-0003 light1 SUCCESS (issuedBy=automation)
 light1 hiện tại=OFF
 ```
 
+### 2.8 Đăng ký thiết bị (Admin)
+
+```text
+POST /api/auth/login admin → token
+POST /api/devices {"deviceId":"office-env-02","name":"Node A test","type":"ENV",...}
+→ 201 CREATED, status=REGISTERED
+POST lại cùng deviceId → 409 DEVICE_EXISTS
+```
+
 ## 3. Test tay cần làm khi có phần cứng/frontend
 
 - [ ] ESP32 Node A thật → telemetry vào DB, đúng `quality`, đúng đơn vị.
@@ -132,7 +150,7 @@ light1 hiện tại=OFF
 - [ ] `door1=OPEN` quá ngưỡng → `DOOR_LEFT_OPEN`.
 - [ ] Cấu hình Mosquitto ACL/password: device không publish được topic của node khác.
 - [ ] Kiểm tra CORS với origin frontend thật.
-- [ ] Kiểm tra SSE (sau P0) nhận telemetry/alert/command realtime.
+- [ ] Kiểm tra SSE nhận telemetry/alert/command realtime.
 
 ## 4. Lưu ý khi chạy test
 
@@ -140,4 +158,6 @@ light1 hiện tại=OFF
   `Get-NetTCPConnection -LocalPort 1883`.
 - DB dev có thể còn alert/command của lần test trước; dùng `docker compose down -v` để reset
   (xoá volume) nếu cần dữ liệu sạch.
-- `X-User-Id` chỉ là tạm thời; sau P0 auth phải đổi sang Bearer token.
+- `X-User-Id` đã bị bỏ; mọi API điều khiển dùng `Authorization: Bearer <token>`.
+- Flyway: `V1` + `V2` đã chạy sạch trên PostgreSQL 16 trống; `docker compose up` backend healthy.
+- V1/V2 cùng khai báo cột streak/version nên DB mới có warning "already exists" — vô hại, V2 idempotent.

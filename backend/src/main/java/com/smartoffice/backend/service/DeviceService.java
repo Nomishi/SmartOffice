@@ -28,9 +28,33 @@ public class DeviceService {
         return deviceRepository.findAll(pageable);
     }
 
-    public Device getRequired(String deviceId) {        return deviceRepository.findById(deviceId)
+    public Device getRequired(String deviceId) {
+        return deviceRepository.findById(deviceId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND",
                         "Không thấy thiết bị " + deviceId));
+    }
+
+    /** Đăng ký thủ công (Admin). Thiết bị mới ở trạng thái REGISTERED, chờ activate. */
+    @Transactional
+    public Device register(com.smartoffice.backend.api.dto.CreateDeviceRequest request) {
+        if (deviceRepository.existsById(request.deviceId())) {
+            throw new ApiException(HttpStatus.CONFLICT, "DEVICE_EXISTS",
+                    "Thiết bị đã tồn tại: " + request.deviceId());
+        }
+        Device device = new Device();
+        device.setDeviceId(request.deviceId().trim());
+        device.setName(request.name().trim());
+        device.setType(request.type());
+        device.setStatus(DeviceStatus.REGISTERED);
+        device.setMode(Mode.AUTO);
+        device.setRoomId(request.roomId() == null || request.roomId().isBlank()
+                ? "room-01" : request.roomId().trim());
+        device.setFwVersion(request.fwVersion());
+        device.setOnline(false);
+        device.setRegisteredAt(Instant.now());
+        device.setUpdatedAt(Instant.now());
+        log.info("Đăng ký thiết bị {} (type={})", device.getDeviceId(), device.getType());
+        return deviceRepository.save(device);
     }
 
     /**

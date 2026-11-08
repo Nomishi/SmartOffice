@@ -15,12 +15,12 @@ Nếu cần đổi payload/endpoint chung, sửa contract trước.
 | Command + ACK + timeout/retry | ✅ | 5s (door1 10s), retry 2, Idempotency-Key |
 | Config + ACK + retained | ✅ | `CONFIG_CONFLICT` nếu đang PENDING |
 | DB telemetry/power/command/alert/rule/audit | ✅ | JPA + PostgreSQL 16 |
-| REST cho M4 | ⚠️ | Thiếu auth; thiếu `POST /api/devices`; thiếu config history |
+| REST cho M4 | ✅ | Auth JWT + `POST /api/devices` đã có; còn thiếu GET lịch sử config (P1) |
 | Rule/automation | ✅ | 5 rule + offline + sensor fault; có test live |
-| Realtime SSE | ✅ | `GET /api/stream`, hỗ trợ Bearer & `?token=`, event camelCase, heartbeat 15s |
-| Auth JWT/RBAC/user | ✅ | JWT HS256, BCrypt, ADMIN/OPERATOR/VIEWER, seed dev users, bỏ `X-User-Id` |
-| Flyway | ✅ | `V1__init.sql` khởi tạo 9 bảng + index, `ddl-auto: validate` |
-| Dockerfile backend | ✅ | Multi-stage Dockerfile + tích hợp compose |
+| Realtime SSE | ✅ | `GET /api/stream`, hỗ trợ Bearer & `?token=` (chỉ stream), event camelCase, heartbeat 15s |
+| Auth JWT/RBAC/user | ✅ | JWT HS256/HS512 theo key, BCrypt, ADMIN/OPERATOR/VIEWER, seed dev users, bỏ `X-User-Id` |
+| Flyway | ✅ | `V1` + `V2`, `baseline-on-migrate`, `ddl-auto: validate`; đã verify PostgreSQL 16 sạch và Docker |
+| Dockerfile backend | ✅ | Multi-stage Dockerfile + compose backend healthy, login OK |
 | OpenAPI/Swagger | ✅ | `springdoc-openapi` + `/swagger-ui/index.html` + `docs/frontend-integration.md` |
 | Retention/rate limit | ❌ | P2 |
 | Room/Schedule entity | ❌ | MVP dùng `roomId` string; xem mục 4 |
@@ -49,13 +49,14 @@ Bằng chứng test: [`test-checklist.md`](test-checklist.md).
 | `503 MQTT_UNAVAILABLE` | Trả khi publish lúc broker down | Contract cũ chưa có mã lỗi cho tình huống broker mất kết nối. |
 | `GET /api/alerts?includeResolved=` | Query param bổ sung | Phục vụ màn hình lịch sử cảnh báo của M4. |
 | `POST /commands?wait=true` | Poll DB tới 10s, trả 200 khi có ACK, 504 `COMMAND_TIMEOUT` nếu hết | Đúng mục 8.3. |
-| `X-User-Id` header | Tạm thời, mặc định 1, map `issuedBy = user-<id>` | Auth JWT chưa làm; P0 sẽ thay hoàn toàn. Header này **không phải** contract cuối. |
+| `X-User-Id` header | **Đã bỏ** — `issuedBy` lấy từ JWT dạng `user-<id>` | Auth JWT đã triển khai; chỉ dùng Bearer. |
 | Response `GET /api/devices/{id}/status` | `actuators = null` với Node A | Đúng mục 8.2. |
+| `POST /api/devices` | 201, status `REGISTERED`, trùng ID → 409 `DEVICE_EXISTS` | Bổ sung để Admin đăng ký thiết bị; activate riêng. |
 | `POST /devices/{id}/activate|lock|decommission` | Có endpoint cơ bản | Thuộc lifecycle; P1 sẽ chặn chuyển trạng thái sai (ví dụ DECOMMISSIONED → ACTIVE). |
 | Auto-register thiết bị lạ | Bật ở dev (`smartoffice.mqtt.auto-register-unknown-devices=true`), log WARN | Cho M1 test trước khi có register; production phải tắt. |
 | `SENSOR_FAULT` | Set device `FAULT`, tự về `ACTIVE` sau 3 VALID liên tiếp | Đúng mục 5.5. |
 | MQTT mất kết nối | Paho `automaticReconnect`, giữ `cleanSession=false`; API trả 503 nếu publish lúc broker down | Cần M4 hiển thị trạng thái lỗi. |
-| WebSocket/SSE | Chưa làm; đề xuất **SSE** `/api/stream` | Contract ghi "chốt riêng"; SSE đơn giản cho dashboard. |
+| WebSocket/SSE | Đã dùng **SSE** `/api/stream` | Contract ghi "chốt riêng"; SSE đơn giản cho dashboard. |
 
 ## 4. Lệch mô hình dữ liệu so với mục 9 (cần biết)
 

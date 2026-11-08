@@ -33,6 +33,13 @@ public class DeviceController {
     private final ConfigService configService;
     private final EnergyService energyService;
 
+    @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DeviceSummaryDto> register(@Valid @RequestBody CreateDeviceRequest request) {
+        Device device = deviceService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(DeviceSummaryDto.from(device));
+    }
+
     @GetMapping
     public PageResponse<DeviceSummaryDto> list(
             @RequestParam(defaultValue = "0") int page,
