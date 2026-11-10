@@ -122,7 +122,11 @@ public class AutomationEngine {
         for (Device control : controlDevices) {
             PowerReading latest = powerReadingRepository
                     .findFirstByDeviceIdOrderByReceivedAtDesc(control.getDeviceId()).orElse(null);
-            double totalW = latest == null ? 0
+            boolean powerUsable = latest != null
+                    && latest.getQuality() == Quality.VALID
+                    && latest.getReceivedAt()
+                    .plusSeconds(properties.getRules().getOfflineTimeoutSeconds()).isAfter(now);
+            double totalW = !powerUsable ? 0
                     : nz(latest.getLight1PowerW()) + nz(latest.getFan1PowerW());
 
             if (roomEmpty && isOnline(control, now) && totalW > thresholdW) {

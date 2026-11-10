@@ -8,10 +8,15 @@ spring:
     hibernate:
       ddl-auto: create-drop
     open-in-view: false
+  flyway:
+    enabled: false
 
 smartoffice:
   mqtt:
     enabled: false
+  security:
+    jwt-secret: test-super-secret-dev-jwt-key-minimum-256-bits-length-required!
+    seed-dev-users: true
   rules:
     offline-check-interval-ms: 600000
     command-timeout-check-interval-ms: 600000

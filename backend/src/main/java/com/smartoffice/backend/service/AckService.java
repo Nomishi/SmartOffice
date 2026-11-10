@@ -25,6 +25,7 @@ public class AckService {
     private final DeviceConfigRepository deviceConfigRepository;
     private final DeviceRepository deviceRepository;
     private final DeviceService deviceService;
+    private final com.smartoffice.backend.realtime.RealtimeService realtimeService;
 
     @Transactional
     public void handle(JsonNode ack) {
@@ -78,6 +79,7 @@ public class AckService {
                 deviceService.applyActuator(device, command.getTarget(), state);
             });
         }
+        realtimeService.broadcast("command", com.smartoffice.backend.api.dto.CommandDto.from(command));
     }
 
     private void handleConfigAck(JsonNode ack) {
@@ -94,5 +96,6 @@ public class AckService {
                 ? CommandStatus.SUCCESS : CommandStatus.FAILED);
         config.setAckAt(Instant.now());
         log.info("ACK config {} -> {}", configId, config.getStatus());
+        realtimeService.broadcast("config", com.smartoffice.backend.api.dto.ConfigDto.from(config));
     }
 }

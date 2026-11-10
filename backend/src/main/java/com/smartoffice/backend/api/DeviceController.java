@@ -33,6 +33,13 @@ public class DeviceController {
     private final ConfigService configService;
     private final EnergyService energyService;
 
+    @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DeviceSummaryDto> register(@Valid @RequestBody CreateDeviceRequest request) {
+        Device device = deviceService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(DeviceSummaryDto.from(device));
+    }
+
     @GetMapping
     public PageResponse<DeviceSummaryDto> list(
             @RequestParam(defaultValue = "0") int page,
@@ -78,7 +85,8 @@ public class DeviceController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "100") int size) {
+            @RequestParam(defaultValue = "20") int size) {
+        deviceService.getRequired(id);
         validateRange(from, to);
         Pageable pageable = PageRequest.of(page, clampSize(size),
                 Sort.by(Sort.Direction.DESC, "receivedAt"));
@@ -94,6 +102,7 @@ public class DeviceController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(defaultValue = "hour") String bucket) {
+        deviceService.getRequired(id);
         return energyService.compute(id, from, to, bucket);
     }
 
@@ -102,20 +111,22 @@ public class DeviceController {
             @PathVariable String id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        deviceService.getRequired(id);
         Pageable pageable = PageRequest.of(page, clampSize(size),
                 Sort.by(Sort.Direction.DESC, "issuedAt"));
         return commandService.listByDevice(id, pageable);
     }
 
     @PostMapping("/{id}/commands")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     public ResponseEntity<CommandDto> sendCommand(
             @PathVariable String id,
             @Valid @RequestBody CommandRequest request,
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
-            @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId,
             @RequestParam(defaultValue = "false") boolean wait) {
+        String issuedBy = com.smartoffice.backend.security.SecurityUtils.getIssuedBy();
         Command command = commandService.create(id, request.target(), request.action(),
-                "user-" + userId, idempotencyKey);
+                issuedBy, idempotencyKey);
 
         if (wait) {
             Command finished = commandService.awaitResult(command.getCommandId(), 10_000);
@@ -125,6 +136,7 @@ public class DeviceController {
     }
 
     @PostMapping("/{id}/mode")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     public Map<String, Object> setMode(@PathVariable String id, @Valid @RequestBody ModeRequest request) {
         Device device = deviceService.setMode(id, request.mode());
         return Map.of("deviceId", device.getDeviceId(), "mode", device.getMode(),
@@ -132,23 +144,27 @@ public class DeviceController {
     }
 
     @PutMapping("/{id}/config")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     public ConfigDto sendConfig(@PathVariable String id,
-                                @Valid @RequestBody ConfigRequest request,
-                                @RequestHeader(value = "X-User-Id", defaultValue = "1") Long userId) {
-        return configService.send(id, request, "user-" + userId);
+                                @Valid @RequestBody ConfigRequest request) {
+        String issuedBy = com.smartoffice.backend.security.SecurityUtils.getIssuedBy();
+        return configService.send(id, request, issuedBy);
     }
 
     @PostMapping("/{id}/activate")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public Map<String, Object> activate(@PathVariable String id) {
         return changeStatus(id, DeviceStatus.ACTIVE);
     }
 
     @PostMapping("/{id}/lock")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public Map<String, Object> lock(@PathVariable String id) {
         return changeStatus(id, DeviceStatus.LOCKED);
     }
 
     @PostMapping("/{id}/decommission")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public Map<String, Object> decommission(@PathVariable String id) {
         return changeStatus(id, DeviceStatus.DECOMMISSIONED);
     }

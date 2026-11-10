@@ -23,12 +23,44 @@ services:
     container_name: smartoffice-mosquitto
     restart: unless-stopped
     ports:
-      - "1883:1883"
+      - "${MOSQUITTO_PORT:-1883}:1883"
       - "9001:9001"
     volumes:
       - ./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 mosquitto_sub -t '$$SYS/#' -C 1 || exit 0"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartoffice-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-smartoffice}
+      DB_USER: ${POSTGRES_USER:-smartoffice}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-smartoffice}
+      MQTT_BROKER_URL: tcp://mosquitto:1883
+      MQTT_ENABLED: ${MQTT_ENABLED:-true}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
+      SEED_DEV_USERS: ${SEED_DEV_USERS:-true}
+      JWT_SECRET: ${JWT_SECRET:-smartoffice-super-secret-dev-jwt-key-minimum-256-bits-length-required-for-hs256!}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-adminPassword123!}
+      OPERATOR_PASSWORD: ${OPERATOR_PASSWORD:-operatorPassword123!}
+      VIEWER_PASSWORD: ${VIEWER_PASSWORD:-viewerPassword123!}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+    ports:
+      - "8080:8080"
 
 volumes:
   pgdata:

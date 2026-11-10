@@ -37,6 +37,7 @@ public class CommandService {
     private final MqttService mqttService;
     private final SmartOfficeProperties properties;
     private final AuditService auditService;
+    private final com.smartoffice.backend.realtime.RealtimeService realtimeService;
 
     @Transactional
     public Command create(String deviceId, String target, String action,
@@ -71,6 +72,7 @@ public class CommandService {
 
         publishCommand(command);
         auditService.log(issuedBy, "COMMAND_SENT", deviceId + "/" + target, "PENDING");
+        realtimeService.broadcast("command", com.smartoffice.backend.api.dto.CommandDto.from(command));
         return command;
     }
 

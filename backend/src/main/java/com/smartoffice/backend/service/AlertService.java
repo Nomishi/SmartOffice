@@ -3,6 +3,7 @@ package com.smartoffice.backend.service;
 import com.smartoffice.backend.api.ApiException;
 import com.smartoffice.backend.domain.*;
 import com.smartoffice.backend.repository.AlertRepository;
+import com.smartoffice.backend.realtime.RealtimeService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,7 @@ public class AlertService {
     private static final Logger log = LoggerFactory.getLogger(AlertService.class);
 
     private final AlertRepository alertRepository;
+    private final RealtimeService realtimeService;
 
     /**
      * Mỗi (type, deviceId) chỉ có tối đa 1 alert đang mở để tránh spam mỗi 5 giây.
@@ -52,7 +54,9 @@ public class AlertService {
                     alert.setMessage(message);
                     alert.setCreatedAt(Instant.now());
                     log.info("Tạo cảnh báo {} cho {}: {}", type, deviceId, message);
-                    return alertRepository.save(alert);
+                    Alert saved = alertRepository.save(alert);
+                    realtimeService.broadcast("alert", saved);
+                    return saved;
                 });
     }
 
@@ -62,6 +66,7 @@ public class AlertService {
                 .ifPresent(alert -> {
                     alert.setResolvedAt(Instant.now());
                     log.info("Tự đóng cảnh báo {} của {}", type, deviceId);
+                    realtimeService.broadcast("alert", alert);
                 });
     }
 
@@ -74,6 +79,7 @@ public class AlertService {
             alert.setStatus(AlertStatus.ACKNOWLEDGED);
             alert.setAcknowledgedBy(userId);
             alert.setAcknowledgedAt(Instant.now());
+            realtimeService.broadcast("alert", alert);
         }
         return alert;
     }

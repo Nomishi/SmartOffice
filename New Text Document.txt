@@ -1,3 +1,8 @@
+LƯU Ý (07/11/2026): File này là bản nháp cũ, chỉ để tham khảo.
+Phân công chính thức theo Contract v1.3 mục 12: M1 = firmware Node A; M2 = firmware Node B;
+M3 = backend Spring Boot (MQTT, DB, REST, rule, auth/RBAC); M4 = frontend/realtime/Docker/ACL.
+Các đoạn bên dưới ghi "M2 backend / M3 telemetry" là đã lỗi thời, KHÔNG dùng để chia việc.
+
 Checklist trước khi bắt đầu
 1. Chốt phạm vi tính năng — QUAN TRỌNG NHẤT
 

@@ -2,6 +2,16 @@
 
 Tài liệu thống nhất giao diện kết nối giữa M1, M2, M3, M4. Mọi thay đổi phải báo cả nhóm và sửa vào file này trước khi code.
 
+**Phiên bản 1.3 (07/11/2026)** – bổ sung sau khi M3 triển khai backend, không phá vỡ v1.2:
+
+- Chốt auth JWT + RBAC + quản lý user nằm **trong backend M3** (cùng Spring Boot), không tách service riêng.
+- Thêm `resolvedAt` (nullable) cho Alert: alert tự đóng khi điều kiện hết; `GET /api/alerts` mặc định ẩn alert đã resolved, thêm `?includeResolved=true` để xem.
+- Thêm mã lỗi `503 MQTT_UNAVAILABLE` khi backend không publish được do broker mất kết nối.
+- Thêm entity `DeviceConfig` để lưu lịch sử config/ACK.
+- Bổ sung `POST /api/devices` (Admin, trả `201 REGISTERED`) và mã lỗi `409 DEVICE_EXISTS`.
+- Ghi rõ MVP dùng `roomId` string (chưa có bảng `Room`); chưa có API `Schedule`.
+- Làm rõ phân trang telemetry mặc định `size=20` (client có thể truyền tối đa 100).
+
 **Phiên bản 1.2 (26/10/2026)** – chốt các điểm còn lệch trước khi code. Thay đổi so với v1.1:
 
 - Thêm `quality` (VALID / SUSPECT / INVALID) vào telemetry Node A và Node B; chốt quy tắc M3 dùng dữ liệu theo `quality`.
@@ -214,7 +224,7 @@ Lifecycle thiết bị: `REGISTERED → PROVISIONED → ACTIVE ⇄ OFFLINE / FAU
 | Method | Endpoint | Quyền | Mô tả |
 | --- | --- | --- | --- |
 | POST | `/api/auth/login` | public | đăng nhập, trả JWT |
-| POST | `/api/auth/register` | public/Admin | tạo tài khoản |
+| POST | `/api/auth/register` | Admin | tạo tài khoản (bootstrap: cho phép public khi DB chưa có user nào) |
 | PUT | `/api/users/me/password` | user | đổi mật khẩu |
 | GET | `/api/users` | Admin | danh sách user |
 | POST | `/api/users` | Admin | tạo user |
@@ -232,7 +242,7 @@ Lifecycle thiết bị: `REGISTERED → PROVISIONED → ACTIVE ⇄ OFFLINE / FAU
 | GET | `/api/devices/{id}/commands` | user | lịch sử lệnh |
 | GET | `/api/rules` | user | danh sách rule/ngưỡng |
 | PUT | `/api/rules/{id}` | Admin/Operator | sửa ngưỡng, bật/tắt rule |
-| GET | `/api/alerts` | user | danh sách cảnh báo |
+| GET | `/api/alerts` | user | danh sách cảnh báo; mặc định ẩn alert đã resolved |
 | PATCH | `/api/alerts/{id}/acknowledge` | Admin/Operator | xác nhận cảnh báo |
 | GET | `/api/audit-logs` | Admin | nhật ký thao tác |
 
@@ -242,7 +252,8 @@ Xác thực: header `Authorization: Bearer <JWT>`. Realtime: WebSocket hoặc SS
 
 - Content-Type `application/json; charset=utf-8`.
 - Timestamp trong response: ISO-8601 UTC (`2026-10-24T15:30:00Z`). ID: số nguyên tăng dần cho `userId`/`ruleId`/`alertId`; `commandId`/`configId` dạng `CMD-0001`/`CFG-0001`; `deviceId` là chuỗi.
-- **Phân trang** cho mọi endpoint trả danh sách: query `page` (mặc định 0), `size` (mặc định 20, tối đa 100), `sort` (ví dụ `receivedAt,desc`).
+- **Phân trang** cho mọi endpoint trả danh sách: query `page` (mặc định 0), `size` (mặc định 20, tối đa 100), `sort` (ví dụ `receivedAt,desc`). Riêng `GET /api/devices/{id}/telemetry` cũng mặc định `size=20`; client truyền `size=100` nếu cần.
+- **Alert đã resolved** (`resolvedAt != null`) bị ẩn khỏi `GET /api/alerts` mặc định; thêm `?includeResolved=true` để xem lịch sử đầy đủ.
 
 ```json
 {"items":[],"page":0,"size":20,"total":0,"totalPages":0}
@@ -276,6 +287,14 @@ Xác thực: header `Authorization: Bearer <JWT>`. Realtime: WebSocket hoặc SS
  "page":0,"size":20,"total":2,"totalPages":1}
 ```
 
+**POST `/api/devices`** (Admin) body `{"deviceId":"office-env-02","name":"Node A 2","type":"ENV","roomId":"room-01","fwVersion":"1.0.0"}` → 201
+
+```json
+{"deviceId":"office-env-02","name":"Node A 2","type":"ENV","status":"REGISTERED","mode":"AUTO","roomId":"room-01","online":false,"fwVersion":"1.0.0","lastSeenAt":null}
+```
+
+Thiết bị mới ở `REGISTERED`, sau đó Admin gọi `/activate` để chuyển `ACTIVE`. Trùng `deviceId` → 409 `DEVICE_EXISTS`.
+
 **GET `/api/devices/{id}/status`** → 200
 
 ```json
@@ -294,7 +313,7 @@ Với Node A, `actuators` = `null`, `latestTelemetry` chứa `temperature`, `hum
  "page":0,"size":100,"total":17280,"totalPages":173}
 ```
 
-`from`/`to` bắt buộc, tối đa 7 ngày/lần truy vấn; thiếu thì trả 400 `VALIDATION_ERROR`.
+`from`/`to` bắt buộc, tối đa 7 ngày/lần truy vấn; thiếu thì trả 400 `VALIDATION_ERROR`. Ví dụ trên client truyền `size=100`; mặc định của endpoint là `size=20`.
 
 **GET `/api/devices/{id}/energy?from=&to=&bucket=hour`** → 200
 
@@ -345,7 +364,7 @@ Xem cấu trúc `Rule` đầy đủ ở mục 9.1.
 ```json
 {"items":[{"alertId":12,"type":"TEMP_HIGH","severity":"MEDIUM","status":"OPEN","deviceId":"office-env-01",
  "roomId":"room-01","value":31.2,"threshold":30,"createdAt":"2026-10-24T15:30:00Z",
- "acknowledgedBy":null,"acknowledgedAt":null}],
+ "acknowledgedBy":null,"acknowledgedAt":null,"resolvedAt":null}],
  "page":0,"size":20,"total":1,"totalPages":1}
 ```
 
@@ -381,10 +400,12 @@ Xem cấu trúc `Rule` đầy đủ ở mục 9.1.
 | 409 | `DEVICE_OFFLINE` | Thiết bị `ACTIVE` nhưng quá 90 giây không có status/telemetry |
 | 409 | `DEVICE_LOCKED` | Thiết bị `LOCKED` |
 | 409 | `DEVICE_DECOMMISSIONED` | Thiết bị `DECOMMISSIONED` |
+| 409 | `DEVICE_EXISTS` | Đăng ký trùng `deviceId` |
 | 409 | `COMMAND_DUPLICATE` | Cùng `Idempotency-Key` nhưng body khác (target/action khác) |
 | 409 | `CONFIG_CONFLICT` | Đang có config `PENDING` chưa ACK mà gửi config mới |
 | 429 | `RATE_LIMITED` | Quá số request cho phép |
 | 500 | `INTERNAL_ERROR` | Lỗi backend không xác định |
+| 503 | `MQTT_UNAVAILABLE` | Backend chưa kết nối được MQTT broker, không publish được lệnh/config |
 | 504 | `COMMAND_TIMEOUT` | Hết timeout chờ ACK lệnh (5 giây; `door1` 10 giây) |
 | 504 | `CONFIG_TIMEOUT` | Hết timeout chờ ACK cấu hình (10 giây) |
 
@@ -394,9 +415,11 @@ Lưu ý: kiểm tra theo thứ tự **401 → 403 → 404 → 409 trạng thái 
 
 ## 9. Database entity
 
-`User`, `Role`, `Room`, `Device`, `Telemetry`, `PowerReading`, `Command`, `Alert`, `Rule`, `Schedule`, `AuditLog`.
+`User`, `Role`, `Room`, `Device`, `Telemetry`, `PowerReading`, `Command`, `Alert`, `Rule`, `Schedule`, `DeviceConfig`, `AuditLog`.
 
-Quan hệ chính: `Room ───< Device`, `Device ───< Telemetry`, `Device ───< PowerReading`, `Device ───< Command`, `Device ───< Alert`, `User ───< AuditLog`, `User ───< Command (issuedBy)`.
+Quan hệ chính: `Room ───< Device`, `Device ───< Telemetry`, `Device ───< PowerReading`, `Device ───< Command`, `Device ───< Alert`, `Device ───< DeviceConfig`, `User ───< AuditLog`, `User ───< Command (issuedBy)`.
+
+> **Hiện trạng MVP (v1.3):** auth/`User` chưa triển khai (P0); 1 phòng nên `Room` đang là `roomId` string trên `Device`/`Alert`, chưa tạo bảng riêng; `Schedule` chưa có API nên chưa triển khai; `Role` dùng enum trong `User`; `DeviceConfig` thêm để lưu lịch sử config/ACK.
 
 ### 9.1 Cấu trúc `Rule`
 
@@ -432,9 +455,10 @@ Field tối thiểu:
 - **Telemetry** (Node A): `deviceId`, `receivedAt`, `temperature`, `humidity`, `lux`, `presence`, `quality`, `airRaw` (nullable)
 - **PowerReading** (Node B): `deviceId`, `receivedAt`, `busVoltageV`, `light1PowerW`, `light1CurrentMa`, `fan1PowerW`, `fan1CurrentMa`, `quality`
 - **Command**: `commandId`, `deviceId`, `target`, `action`, `status`, `issuedBy`, `issuedAt`, `ackAt`, `latencyMs`, `idempotencyKey` (nullable)
-- **Alert**: `type`, `severity`, `status`, `deviceId`, `createdAt`, `acknowledgedBy`, `acknowledgedAt`, `value`, `threshold`, `roomId`
+- **Alert**: `type`, `severity`, `status`, `deviceId`, `createdAt`, `acknowledgedBy`, `acknowledgedAt`, `value`, `threshold`, `roomId`, `resolvedAt` (nullable)
 - **Rule**: `ruleId`, `name`, `type`, `params`, `action`, `enabled` (xem 9.1)
-- **Schedule**: `scheduleId`, `roomId`, `time`, `action`, `enabled`
+- **Schedule**: `scheduleId`, `roomId`, `time`, `action`, `enabled` (chưa có API trong MVP)
+- **DeviceConfig**: `configId`, `deviceId`, `status`, `issuedBy`, `issuedAt`, `ackAt`, `payload` (lịch sử config/ACK; bổ sung v1.3)
 
 ## 10. Phân quyền
 
@@ -465,7 +489,7 @@ Field tối thiểu:
 | --- | --- | --- |
 | M1 | Firmware Node A, đọc cảm biến (AHT20, BH1750, LD2410C, MQ-135), gắn `quality`, publish telemetry/status, mock telemetry | ESP32 gửi đúng payload; có script giả lập |
 | M2 | Firmware Node B, relay, servo + công tắc từ (`door1`), buzzer, INA219 ×2, gắn `quality`, command handler, ACK, nhận config (LCD nếu làm) | Gửi lệnh bằng MQTT client, nhận ACK đúng; telemetry công suất đúng payload |
-| M3 | Spring Boot, MQTT subscriber, DB, REST API, rule engine, alert, automation, tính điện năng, publish config | Nhận dữ liệu, lưu DB, sinh cảnh báo, gửi lệnh/config |
+| M3 | Spring Boot, MQTT subscriber, DB, REST API, auth/RBAC + user, rule engine, alert, automation, tính điện năng, publish config | Nhận dữ liệu, lưu DB, sinh cảnh báo, gửi lệnh/config |
 | M4 | Frontend, login theo role, dashboard, realtime, Docker, Mosquitto ACL/credential, docs | Giao diện chạy bằng mock trước, nối backend thật sau |
 
 **Làm song song bằng mock:** M1 dùng mock publisher, M2 test bằng MQTT client, M3 test với telemetry giả, M4 dùng JSON giả. Miễn contract không đổi thì khi thay mock bằng ESP32 thật không phải sửa code.
@@ -490,12 +514,12 @@ Field tối thiểu:
 - [ ] Xác nhận linh kiện giả định đã có: đèn 12V, nguồn 12V/5V, cầu chì, diode, tụ 1000µF
 - [ ] Hàn bridge chân A0 trên INA219 #2 để đổi địa chỉ sang 0x41
 - [ ] Chốt có dùng LCD không, loại LCD và gắn vào node nào
-- [ ] Chốt vai trò M2/M3 theo bảng mục 12 (khác proposal cũ)
+- [x] Chốt vai trò M2/M3 theo bảng mục 12 (M2 firmware Node B, M3 backend) — đã thống nhất v1.3
 - [ ] Chốt giữ hay bỏ `PROVISIONED`, `FAULT` (đề xuất giữ; `SENSOR_FAULT` đã chốt)
 - [ ] Làm nóng và hiệu chuẩn MQ-135, chốt ngưỡng `airRaw`; chốt ngưỡng `TEMP_HIGH`, lux, công suất
 - [ ] Thử LD2410C với quạt đang chạy (kiểm tra nhiễu), chỉnh độ nhạy; nếu nhiễu thì cân nhắc thêm PIR để đối chiếu
-- [ ] Tạo `docker-compose.yml` (Mosquitto + PostgreSQL) và `.env.example`
-- [ ] Viết script mock publisher (telemetry Node A, telemetry Node B, status) – **phải có `quality`**
+- [x] Tạo `docker-compose.yml` (Mosquitto + PostgreSQL) và `.env.example` (backend service trong compose: TODO P0)
+- [x] Viết mock publisher (telemetry Node A, Node B, status) – **có `quality`** (profile `mock` của backend)
 - [ ] Cấu hình ACL/credential Mosquitto
 - [ ] Vẽ ERD, sequence diagram (điều khiển, cảnh báo), state diagram, threat model
 - [ ] Chỉnh lại proposal cho khớp phần cứng thật và các ngưỡng

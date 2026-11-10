@@ -4,31 +4,85 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartoffice.backend.domain.*;
 import com.smartoffice.backend.repository.DeviceRepository;
 import com.smartoffice.backend.repository.RuleRepository;
+import com.smartoffice.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.env.Environment;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Seed 2 node và 5 rule mặc định (contract mục 9.1) để dev/mock chạy được ngay. */
+/** Seed 2 node, 5 rule mặc định và 3 user dev (admin/operator1/viewer1). */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class DataSeeder implements ApplicationRunner {
 
     private final DeviceRepository deviceRepository;
     private final RuleRepository ruleRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final SmartOfficeProperties properties;
     private final ObjectMapper objectMapper;
+
+    private final Environment environment;
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
         seedDevices();
         seedRules();
+        seedUsers();
+    }
+
+    private void seedUsers() {
+        if (userRepository.count() > 0) {
+            return;
+        }
+        boolean isDevProfile = Arrays.asList(environment.getActiveProfiles()).contains("dev");
+        String envSeed = environment.getProperty("SEED_DEV_USERS");
+        boolean seedEnabled = properties.getSecurity().isSeedDevUsers()
+                || "true".equalsIgnoreCase(envSeed)
+                || isDevProfile;
+        if (!seedEnabled) {
+            log.info("Bỏ qua seed dev users (chỉ seed khi profile=dev hoặc SEED_DEV_USERS=true)");
+            return;
+        }
+
+        var seedProps = properties.getSecurity().getSeed();
+        log.warn("Seeding default dev users: admin, operator1, viewer1 (DEV ONLY)");
+
+        userRepository.save(User.builder()
+                .username("admin")
+                .passwordHash(passwordEncoder.encode(seedProps.getAdminPassword()))
+                .role(Role.ADMIN)
+                .accountStatus(AccountStatus.ACTIVE)
+                .createdAt(Instant.now())
+                .build());
+
+        userRepository.save(User.builder()
+                .username("operator1")
+                .passwordHash(passwordEncoder.encode(seedProps.getOperatorPassword()))
+                .role(Role.OPERATOR)
+                .accountStatus(AccountStatus.ACTIVE)
+                .createdAt(Instant.now())
+                .build());
+
+        userRepository.save(User.builder()
+                .username("viewer1")
+                .passwordHash(passwordEncoder.encode(seedProps.getViewerPassword()))
+                .role(Role.VIEWER)
+                .accountStatus(AccountStatus.ACTIVE)
+                .createdAt(Instant.now())
+                .build());
     }
 
     private void seedDevices() {

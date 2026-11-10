@@ -1,0 +1,6 @@
+# Giữ kết thúc dòng LF cho file chạy trong container Linux. Nếu entrypoint.sh bị CRLF (hay gặp khi làm việc trên Windows),
+# container báo lỗi kiểu "exec /mosquitto/entrypoint.sh: no such file or directory".
+*.sh   text eol=lf
+*.conf text eol=lf
+*.yml  text eol=lf
+*.py   text eol=lf
