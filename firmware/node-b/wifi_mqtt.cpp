@@ -62,7 +62,8 @@ void reconnectMQTT(PubSubClient& client) {
     char lwtBuffer[150];
     serializeJson(lwtDoc, lwtBuffer);
 
-    if (client.connect(DEVICE_ID, TOPIC_STATUS, 1, true, lwtBuffer)) {
+    if (client.connect(DEVICE_ID, MQTT_USERNAME, MQTT_PASSWORD,
+                       TOPIC_STATUS, 1, true, lwtBuffer)) {
       Serial.println(" Thành công!");
       client.subscribe(TOPIC_COMMAND, 1);
     } else {

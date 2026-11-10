@@ -8,9 +8,13 @@
 const char* WIFI_SSID     = "YOUR_WIFI_SSID";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
-// Thông tin MQTT Broker (Theo tài liệu test M1/M2, port host là 1884 hoặc 1883)
-const char* MQTT_HOST     = "192.168.1.100"; 
-const int   MQTT_PORT     = 1884;
+// Thông tin MQTT Broker
+const char* MQTT_HOST     = "192.168.1.100";
+const int   MQTT_PORT     = 1883;
+
+// Tài khoản MQTT (khớp MQTT_USERS trong deployment/.env)
+const char* MQTT_USERNAME = "office-ctrl-01";
+const char* MQTT_PASSWORD = "doi-mat-khau-ctrl01";
 
 // Định danh thiết bị chuẩn theo Contract nhóm
 const char* DEVICE_ID     = "office-ctrl-01";

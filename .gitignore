@@ -32,6 +32,16 @@ logs/
 data/
 pgdata/
 
+# Frontend
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Local-only reports (không push)
+docs/pdf/
+docs/m3-report.md
+docs/system-overview.md
+
 # Office temp files
 ~$*.docx
 ~$*.xlsx

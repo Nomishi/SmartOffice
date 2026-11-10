@@ -112,7 +112,7 @@ Cũng cần thống nhất CORS nếu frontend và backend chạy khác cổng (
 
 1. Đặt `VITE_USE_MOCK=false` (build Docker mặc định đã là `false`).
 2. Chạy dev: `VITE_API_PROXY=http://localhost:8080 npm run dev` (Vite chuyển `/api` sang backend, gồm cả SSE `/api/stream`).
-   Chạy Docker: Nginx tự chuyển `/api/` sang service `backend:8080`, xem `iot-infra/docker-compose.yml` (profile `ui`).
+   Chạy Docker: Nginx tự chuyển `/api/` sang service `backend:8080`, xem `deployment/docker-compose.yml` (profile `ui`).
 3. Realtime: backend gửi SSE dạng `{ type, data, timestamp }`; `src/realtime.ts` (`normalizeEvent`) đổi sang `RealtimeEvent`.
    Token hết hạn khi đang mở stream (401) thì tự đăng xuất, không thử lại vô hạn.
 4. Đổi mật khẩu gửi trường `oldPassword` (khớp `ChangePasswordRequest` của backend).

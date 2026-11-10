@@ -2,7 +2,7 @@
 
 Tài liệu này ghi các điểm M3 đã chốt/đã làm khi code, để M1/M2/M4 đối chiếu. **Không thay thế
 contract** — giao diện chung vẫn là
-[`Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](../Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md).
+[`Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md).
 Nếu cần đổi payload/endpoint chung, sửa contract trước.
 
 ## 1. Trạng thái triển khai

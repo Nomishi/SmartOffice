@@ -1,5 +1,5 @@
-# Hạ tầng dùng chung: Mosquitto + PostgreSQL (+ mock publisher khi cần).
-# Chạy:  cp .env.example .env  (đổi mật khẩu)  rồi  docker compose up -d
+# Hạ tầng dùng chung: Mosquitto + PostgreSQL + Backend + Frontend.
+# Chạy:  Copy-Item ../.env.example .env  (đổi mật khẩu)  rồi  docker compose --profile ui up -d --build
 name: iot-office
 
 services:
@@ -11,7 +11,6 @@ services:
       - "1883:1883"
     environment:
       MQTT_USERS: ${MQTT_USERS:?Thiếu MQTT_USERS trong .env}
-    # entrypoint.sh tạo file mật khẩu từ MQTT_USERS rồi chạy lệnh ở `command`
     entrypoint: ["/bin/sh", "/mosquitto/entrypoint.sh"]
     command: ["/usr/sbin/mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
     volumes:
@@ -20,7 +19,6 @@ services:
       - ./mosquitto/entrypoint.sh:/mosquitto/entrypoint.sh:ro
       - mosquitto-data:/mosquitto/data
     healthcheck:
-      # Mỗi lần kiểm tra mở một kết nối TCP nên xuất hiện dòng "New connection ... <unknown> closed" trong log: bình thường
       test: ["CMD-SHELL", "nc -z 127.0.0.1 1883 || exit 1"]
       interval: 30s
       timeout: 3s
@@ -35,7 +33,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?Thiếu POSTGRES_USER trong .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Thiếu POSTGRES_PASSWORD trong .env}
     ports:
-      - "5432:5432" # chỉ để dev; bỏ dòng này khi triển khai thật
+      - "5432:5432" # chỉ dev; bỏ khi triển khai thật
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -44,7 +42,7 @@ services:
       timeout: 3s
       retries: 5
 
-  # Thiết bị giả (Node A + Node B). Chạy: docker compose --profile mock up -d mock-publisher
+  # Thiết bị giả Node A + B. Chạy: docker compose --profile mock up -d mock-publisher
   mock-publisher:
     profiles: ["mock"]
     image: python:3.12-slim
@@ -54,21 +52,16 @@ services:
       MQTT_USERS: ${MQTT_USERS:?Thiếu MQTT_USERS trong .env}
       MQTT_HOST: mosquitto
     volumes:
-      - ./scripts:/app:ro
+      - ../tests/mqtt:/app:ro
     command: sh -c "pip install --no-cache-dir -r requirements.txt && python mock_publisher.py"
     depends_on:
       mosquitto:
         condition: service_healthy
 
-  # ---- Backend Spring Boot (M3) ----
-  # Tên biến môi trường phải khớp application.yml của backend (DB_URL, MQTT_BROKER_URL, ...),
-  # KHÔNG phải SPRING_DATASOURCE_* hay MQTT_HOST.
-  # Đường dẫn mã nguồn đổi được qua BACKEND_DIR trong .env.
-  # Không bật SPRING_PROFILES_ACTIVE=mock: MockDeviceAgent ghi telemetry bằng tài khoản `backend`,
-  # còn ACL chỉ cho `backend` ghi command/config. Muốn dữ liệu giả hãy dùng profile `mock` bên trên.
   backend:
     build:
-      context: ${BACKEND_DIR:-../backend}
+      context: ..
+      dockerfile: backend/Dockerfile
     container_name: iot-backend
     restart: unless-stopped
     environment:
@@ -79,29 +72,23 @@ services:
       MQTT_BROKER_URL: tcp://mosquitto:1883
       MQTT_CLIENT_ID: smartoffice-backend
       MQTT_USERNAME: backend
-      # Phải trùng mật khẩu của mục `backend` trong MQTT_USERS
-      MQTT_PASSWORD: ${BACKEND_MQTT_PASSWORD:?Thiếu BACKEND_MQTT_PASSWORD trong .env (trùng mật khẩu của backend trong MQTT_USERS)}
-      JWT_SECRET: ${JWT_SECRET:?Thiếu JWT_SECRET trong .env (chuỗi ngẫu nhiên từ 32 ký tự trở lên)}
+      MQTT_PASSWORD: ${BACKEND_MQTT_PASSWORD:?Thiếu BACKEND_MQTT_PASSWORD trong .env}
+      JWT_SECRET: ${JWT_SECRET:?Thiếu JWT_SECRET trong .env (≥ 32 ký tự)}
       SEED_DEV_USERS: ${SEED_DEV_USERS:-false}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-adminPassword123!}
       OPERATOR_PASSWORD: ${OPERATOR_PASSWORD:-operatorPassword123!}
       VIEWER_PASSWORD: ${VIEWER_PASSWORD:-viewerPassword123!}
-      # Trình duyệt gọi qua Nginx của frontend (cùng origin) nên thường không cần CORS;
-      # giữ lại để truy cập trực tiếp cổng 8080 hoặc chạy `npm run dev` (5173).
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
     ports:
-      - "8080:8080" # chỉ để dev (Swagger, gọi thử API); bỏ dòng này khi triển khai thật
+      - "8080:8080" # dev: Swagger/API trực tiếp
     depends_on:
       postgres: { condition: service_healthy }
       mosquitto: { condition: service_healthy }
 
-  # Giao diện web (M4). Chạy:  docker compose --profile ui up -d --build   rồi mở http://localhost:3000
-  # Cần thư mục iot-frontend nằm cạnh iot-infra (../iot-frontend). Nginx của frontend chuyển /api sang `backend:8080`
-  # (kể cả SSE /api/stream). FRONTEND_USE_MOCK=true để chạy bằng dữ liệu giả, không cần backend.
   frontend:
     profiles: ["ui"]
     build:
-      context: ${FRONTEND_DIR:-../iot-frontend}
+      context: ../frontend
       args:
         VITE_USE_MOCK: ${FRONTEND_USE_MOCK:-false}
     container_name: iot-frontend

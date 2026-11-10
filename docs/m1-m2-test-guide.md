@@ -4,24 +4,24 @@ Hướng dẫn test Node A (M1), Node B (M2) với broker + backend + frontend.
 
 ## 0. Repo có gì?
 
-- `iot-node-b/` — firmware Node B + `simulated_node.py` (M2).
+- `firmware/` — firmware Node B; simulator ở `tests/simulator/node_b_simulator.py`.
 - Backend M3: `backend/`.
-- Frontend M4: `iot-frontend/`.
-- Hạ tầng full stack: `iot-infra/` (Mosquitto ACL + PostgreSQL + backend + frontend).
+- Frontend M4: `frontend/`.
+- Hạ tầng full stack: `deployment/` (Mosquitto ACL + PostgreSQL + backend + frontend).
 - Node A firmware có thể nằm ngoài repo; dùng contract/payload bên dưới.
 
 ```powershell
 git clone https://github.com/Nomishi/SmartOffice.git
 cd SmartOffice
-git checkout feature/backend-complete
+git checkout main
 ```
 
 ## 1. Chọn cách chạy
 
-### Cách A — Full stack `iot-infra` (khuyến nghị, có ACL)
+### Cách A — Full stack `deployment` (khuyến nghị, có ACL)
 
 ```powershell
-cd iot-infra
+cd deployment
 Copy-Item .env.example .env      # đổi mật khẩu; KHÔNG commit .env
 docker compose --profile ui up -d --build
 docker compose ps
@@ -33,7 +33,7 @@ Mặc định trong `.env.example`:
 MQTT_USERS=backend:doi-mat-khau-backend,office-env-01:doi-mat-khau-env01,office-ctrl-01:doi-mat-khau-ctrl01
 ```
 
-> Đọc `MQTT_USERS` trong `iot-infra/.env` để lấy username/password thật.
+> Đọc `MQTT_USERS` trong `deployment/.env` để lấy username/password thật.
 > Username = `deviceId`; backend dùng username `backend`.
 
 Broker:
@@ -45,16 +45,6 @@ Broker:
 
 ACL: device chỉ publish `office/{deviceId}/telemetry|status|ack` và subscribe
 `office/{deviceId}/command|config`. Backend publish command/config, subscribe telemetry/status/ack.
-
-### Cách B — Backend-only `docker-compose.yml` gốc (anonymous)
-
-```powershell
-Copy-Item .env.example .env
-docker compose up -d
-```
-
-Broker host: IP LAN PC, port **1884** (do `MOSQUITTO_PORT=1884`), không auth.
-Backend `8080`, frontend không chạy trong stack này.
 
 ## 2. Device ID & topic
 
@@ -130,15 +120,7 @@ mosquitto_pub -h 192.168.10.205 -p 1883 -u office-ctrl-01 -P "mat-khau-ctrl01" `
   -m '{"online":true,"light1":"OFF","fan1":"OFF","buzzer1":"OFF","door1":"CLOSED","mode":"AUTO","fwVersion":"1.0.0"}'
 ```
 
-Thay mật khẩu bằng giá trị thật trong `iot-infra/.env`.
-
-### Cách B — anonymous, port 1884
-
-```powershell
-mosquitto_sub -h 192.168.10.205 -p 1884 -t "office/#" -v
-mosquitto_pub -h 192.168.10.205 -p 1884 -t office/office-env-01/telemetry -q 1 `
-  -m '{"deviceId":"office-env-01","temperature":31.5,"humidity":70,"lux":300,"presence":false,"quality":"VALID","airRaw":1200}'
-```
+Thay mật khẩu bằng giá trị thật trong `deployment/.env`.
 
 ## 5. Kiểm tra backend
 
@@ -152,8 +134,6 @@ $h = @{ Authorization = "Bearer $token" }
 Invoke-RestMethod "http://localhost:3000/api/devices/office-env-01/status" -Headers $h
 Invoke-RestMethod "http://localhost:3000/api/devices/office-ctrl-01/status" -Headers $h
 ```
-
-Nếu dùng backend-only, đổi `http://localhost:3000` → `http://localhost:8080`.
 
 Telemetry history:
 
@@ -200,15 +180,7 @@ $env:MQTT_PORT = "1883"
 $env:MQTT_USERNAME = "office-ctrl-01"
 $env:MQTT_PASSWORD = "mat-khau-ctrl01"
 $env:PYTHONIOENCODING = "utf-8"
-python iot-node-b/simulated_node.py
-```
-
-Nếu backend-only anonymous:
-
-```powershell
-$env:MQTT_HOST = "localhost"
-$env:MQTT_PORT = "1884"
-python iot-node-b/simulated_node.py
+python tests/simulator/node_b_simulator.py
 ```
 
 Simulator publish status retained, telemetry 5s, heartbeat 30s; nhận command và trả ACK.

@@ -8,11 +8,11 @@ Nếu chỉ làm frontend, xem [`frontend-setup.md`](frontend-setup.md).
 ```powershell
 git clone https://github.com/Nomishi/SmartOffice.git
 cd SmartOffice
-git checkout feature/backend-complete
+git checkout main
 ```
 
 > `main` chưa có backend P0, frontend, infra hay simulator mới nhất.
-> Hiện tại nhánh đúng là **`feature/backend-complete`**.
+> Nhánh chính thức sau khi merge là **`main`**.
 
 ## 1. Cần cài gì?
 
@@ -51,7 +51,7 @@ Get-NetTCPConnection -LocalPort 3000,8080,1883,5432 -State Listen -ErrorAction S
 ## 3. Chạy full stack
 
 ```powershell
-cd iot-infra
+cd deployment
 Copy-Item .env.example .env
 ```
 
@@ -87,7 +87,7 @@ Mở:
 
 ## 4. Tài khoản dev
 
-Khi `SEED_DEV_USERS=true` trong `iot-infra/.env`:
+Khi `SEED_DEV_USERS=true` trong `deployment/.env`:
 
 | Username | Password | Role |
 | --- | --- | --- |
@@ -126,7 +126,7 @@ Trong UI:
 ## 6. Chạy frontend dev (không Docker)
 
 ```powershell
-cd iot-frontend
+cd frontend
 Copy-Item .env.example .env
 npm ci
 ```
@@ -152,9 +152,9 @@ Tài khoản mock: `admin/admin123`, `operator1/operator123`, `viewer1/viewer123
 
 ## 7. Chạy simulator M2
 
-Simulator Node B nằm ở `iot-node-b/simulated_node.py`.
+Simulator Node B nằm ở `tests/simulator/node_b_simulator.py`.
 
-Với full stack `iot-infra` (auth/ACL):
+Với full stack `deployment` (auth/ACL):
 
 ```powershell
 python -m pip install "paho-mqtt>=2.0,<3"
@@ -162,31 +162,23 @@ python -m pip install "paho-mqtt>=2.0,<3"
 $env:MQTT_HOST = "192.168.10.205"       # IP LAN PC, KHÔNG dùng localhost nếu có Mosquitto Windows
 $env:MQTT_PORT = "1883"
 $env:MQTT_USERNAME = "office-ctrl-01"
-$env:MQTT_PASSWORD = "<mật khẩu office-ctrl-01 trong iot-infra/.env>"
+$env:MQTT_PASSWORD = "<mật khẩu office-ctrl-01 trong deployment/.env>"
 $env:PYTHONIOENCODING = "utf-8"
 
-python iot-node-b/simulated_node.py
-```
-
-Với backend-only anonymous (`docker-compose.yml` gốc):
-
-```powershell
-$env:MQTT_HOST = "localhost"
-$env:MQTT_PORT = "1884"
-python iot-node-b/simulated_node.py
+python tests/simulator/node_b_simulator.py
 ```
 
 Simulator sẽ publish status retained, telemetry 5s, heartbeat 30s; nhận command và trả ACK.
 
 ## 8. Chạy simulator M1/M2 nâng cao
 
-`iot-infra/scripts/mock_publisher.py` giả lập cả Node A + B, có scenario:
+`tests/mqtt/mock_publisher.py` giả lập cả Node A + B, có scenario:
 
 ```powershell
-cd iot-infra/scripts
+cd tests/mqtt
 python -m pip install -r requirements.txt
 
-# cần MQTT_USERS trong env; xem iot-infra/README.md
+# cần MQTT_USERS trong env; xem deployment/README.md
 python mock_publisher.py --scenario normal
 python mock_publisher.py --scenario hot
 python mock_publisher.py --scenario sensor-fault
@@ -197,14 +189,14 @@ python mock_publisher.py --scenario silent
 Hoặc chạy qua Docker:
 
 ```powershell
-cd iot-infra
+cd deployment
 docker compose --profile mock up -d mock-publisher
 ```
 
 ## 9. Dừng / reset
 
 ```powershell
-cd iot-infra
+cd deployment
 docker compose --profile ui down       # giữ dữ liệu
 docker compose --profile ui down -v    # xoá luôn DB/MQTT volume
 ```
@@ -222,13 +214,3 @@ docker compose --profile ui down -v    # xoá luôn DB/MQTT volume
 | 409 `DEVICE_OFFLINE` | Chưa có telemetry/status; chạy simulator |
 | Frontend 3000 trắng | `docker compose ps` xem frontend/backend healthy; xem log nginx |
 | SSE không nhận | Token hết hạn; login lại; kiểm tra nginx proxy `/api/stream` |
-
-## 11. Chạy backend-only (nếu chỉ test M3)
-
-```powershell
-Copy-Item .env.example .env
-docker compose up -d
-```
-
-Backend `8080`, Postgres `5433`, Mosquitto host `1884` (anonymous).
-Không chạy đồng thời với `iot-infra` vì trùng `8080`.

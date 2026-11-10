@@ -1,6 +1,6 @@
 # M4 — Frontend setup & integration guide
 
-Frontend thực tế nằm ở `iot-frontend/` (React + Vite + TypeScript + Ant Design + TanStack Query + Recharts).
+Frontend thực tế nằm ở `frontend/` (React + Vite + TypeScript + Ant Design + TanStack Query + Recharts).
 
 **Không cần** Java/Maven/PostgreSQL/Mosquitto để làm frontend, trừ khi tự chạy backend.
 
@@ -9,7 +9,7 @@ Frontend thực tế nằm ở `iot-frontend/` (React + Vite + TypeScript + Ant 
 Cách gọn nhất, có backend + Postgres + Mosquitto ACL + frontend:
 
 ```powershell
-cd iot-infra
+cd deployment
 Copy-Item .env.example .env      # đổi mật khẩu nếu cần; KHÔNG commit .env
 docker compose --profile ui up -d --build
 docker compose ps
@@ -38,7 +38,7 @@ Tài khoản dev backend (khi `SEED_DEV_USERS=true`):
 ## 2. Chạy frontend dev (không Docker)
 
 ```powershell
-cd iot-frontend
+cd frontend
 Copy-Item .env.example .env
 npm ci
 ```
@@ -58,7 +58,7 @@ npm run dev        # http://localhost:5173
 ```
 
 Vite proxy `/api/*` sang backend, gồm cả SSE `/api/stream`.
-Backend cần chạy ở `8080` (Docker `iot-infra` hoặc backend-only).
+Backend cần chạy ở `8080` (Docker `deployment`).
 
 ## 3. Chạy frontend bằng mock (không cần backend)
 
@@ -83,7 +83,7 @@ Mock có sẵn telemetry 5s, ACK, alert, lịch sử, energy để làm UI.
 ## 4. Build & Docker
 
 ```powershell
-cd iot-frontend
+cd frontend
 npm run typecheck
 npm test
 npm run build

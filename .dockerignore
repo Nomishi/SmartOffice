@@ -1,0 +1,13 @@
+# Build context: repository root (deployment/docker-compose.yml sets context: ..)
+.git
+.gitignore
+**/node_modules
+**/dist
+docs
+frontend
+firmware
+tests
+*.docx
+*.png
+*.pdf
+.env

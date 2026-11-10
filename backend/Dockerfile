@@ -2,12 +2,13 @@
 FROM maven:3.9.9-eclipse-temurin-17 AS builder
 WORKDIR /app
 
-# Cache dependencies
-COPY pom.xml .
+# Maven resource plugin copies migrations from /database/migrations into the jar.
+COPY backend/pom.xml .
+COPY database/migrations /database/migrations
 RUN mvn dependency:go-offline -B
 
 # Copy source and build package
-COPY src ./src
+COPY backend/src ./src
 RUN mvn package -DskipTests -B
 
 # Stage 2: Runtime image using JRE

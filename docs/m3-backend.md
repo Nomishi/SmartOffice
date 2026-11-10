@@ -2,7 +2,7 @@
 
 Tài liệu chi tiết phần **M3**. README chỉ giữ overview hệ thống; mọi thứ về backend nằm ở đây.
 
-Contract chân lý: [`../Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](../Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md)
+Contract chân lý: [`Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md)
 (version 1.3). Ghi chú triển khai: [`m3-contract-notes.md`](m3-contract-notes.md).
 
 ## 1. Vai trò M3
@@ -62,11 +62,12 @@ backend/
 
 ### Docker (khuyến nghị)
 
-Từ thư mục gốc repo:
+Từ thư mục repo:
 
 ```powershell
-Copy-Item .env.example .env
-docker compose up -d
+cd deployment
+Copy-Item ../.env.example .env
+docker compose --profile ui up -d --build
 docker compose ps
 ```
 
@@ -147,6 +148,8 @@ Heartbeat `:ping` mỗi 15s.
 
 ## 7. Flyway
 
+Migration nằm ở `database/migrations/`; Maven copy vào jar khi build.
+
 | File | Nội dung |
 | --- | --- |
 | `V1__init.sql` | Schema: users, devices, telemetry, power_reading, commands, alerts, rules, device_configs, audit_logs |
@@ -160,8 +163,9 @@ Heartbeat `:ping` mỗi 15s.
 Reset dev:
 
 ```powershell
-docker compose down -v
-docker compose up --build -d
+cd deployment
+docker compose --profile ui down -v
+docker compose --profile ui up -d --build
 ```
 
 ## 8. MQTT contract
@@ -238,13 +242,13 @@ Mã chính: 400 `VALIDATION_ERROR`, 401 `UNAUTHORIZED|TOKEN_EXPIRED`, 403 `FORBI
 | Biến | Mặc định / ghi chú |
 | --- | --- |
 | `JWT_SECRET` | **Bắt buộc**, ≥ 32 ký tự |
-| `DB_URL` | `jdbc:postgresql://localhost:5433/smartoffice` |
-| `DB_USER` / `DB_PASSWORD` | `smartoffice` / `smartoffice` |
-| `MQTT_BROKER_URL` | `tcp://localhost:1883` |
+| `DB_URL` | `jdbc:postgresql://postgres:5432/iot` (Docker) |
+| `DB_USER` / `DB_PASSWORD` | `iot` / trong `.env` |
+| `MQTT_BROKER_URL` | `tcp://mosquitto:1883` (Docker) |
 | `MQTT_CLIENT_ID` | `smartoffice-backend` |
+| `MQTT_USERNAME` / `MQTT_PASSWORD` | `backend` / `BACKEND_MQTT_PASSWORD` |
 | `MQTT_ENABLED` | `true` |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` |
-| `MOSQUITTO_PORT` | `1883`; đổi `1884` nếu Windows service chiếm |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:3000,http://localhost:5173` |
 | `SEED_DEV_USERS` | `false` prod; `true` dev |
 | `ADMIN_PASSWORD` / `OPERATOR_PASSWORD` / `VIEWER_PASSWORD` | mật khẩu seed |
 
