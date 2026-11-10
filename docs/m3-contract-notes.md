@@ -25,7 +25,7 @@ Nếu cần đổi payload/endpoint chung, sửa contract trước.
 | Retention/rate limit | ❌ | P2 |
 | Room/Schedule entity | ❌ | MVP dùng `roomId` string; xem mục 4 |
 
-Kế hoạch hoàn thiện: [`PROMPT-backend-complete.md`](PROMPT-backend-complete.md).
+Việc còn lại: xem mục **Việc tiếp theo** trong [`../README.md`](../README.md).
 Bằng chứng test: [`test-checklist.md`](test-checklist.md).
 
 ## 2. Đúng contract, không đổi
