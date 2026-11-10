@@ -6,6 +6,8 @@ frontend React hiển thị dashboard realtime và điều khiển thiết bị.
 
 Contract chung: [`Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md) **(v1.3)**.
 
+> **Mới clone repo?** Làm theo [`docs/SETUP.md`](docs/SETUP.md) để chạy từ đầu.
+
 ## Kiến trúc
 
 ```text
@@ -172,6 +174,7 @@ Simulator publish status retained, telemetry 5s, heartbeat 30s; nhận `command`
 | File | Nội dung |
 | --- | --- |
 | [`Contract_chung_...md`](Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md) | Contract v1.3 |
+| [`docs/SETUP.md`](docs/SETUP.md) | Setup từ đầu: clone → Docker → test |
 | [`docs/m3-backend.md`](docs/m3-backend.md) | Backend M3 chi tiết |
 | [`docs/frontend-setup.md`](docs/frontend-setup.md) | Setup frontend (bản mới) |
 | [`docs/frontend-integration.md`](docs/frontend-integration.md) | API/SSE cho M4 |
