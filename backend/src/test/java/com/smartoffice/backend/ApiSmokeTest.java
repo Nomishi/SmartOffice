@@ -105,6 +105,15 @@ class ApiSmokeTest {
     }
 
     @Test
+    void aiDisabledReturns503() throws Exception {
+        mockMvc.perform(post("/api/ai/chat")
+                        .contentType("application/json")
+                        .content("{\"message\":\"Nhiệt độ có bình thường không?\"}"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error.code").value("AI_UNAVAILABLE"));
+    }
+
+    @Test
     void commandToOfflineDeviceIsRejected() throws Exception {
         mockMvc.perform(post("/api/devices/office-ctrl-01/commands")
                         .contentType("application/json")

@@ -79,6 +79,11 @@ services:
       OPERATOR_PASSWORD: ${OPERATOR_PASSWORD:-operatorPassword123!}
       VIEWER_PASSWORD: ${VIEWER_PASSWORD:-viewerPassword123!}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      AI_ENABLED: ${AI_ENABLED:-false}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
+      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-20000}
     ports:
       - "8080:8080" # dev: Swagger/API trực tiếp
     depends_on:

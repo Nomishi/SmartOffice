@@ -13,6 +13,18 @@ public class SmartOfficeProperties {
     private Rules rules = new Rules();
     private Cors cors = new Cors();
     private Security security = new Security();
+    private Ai ai = new Ai();
+
+    @Getter
+    @Setter
+    public static class Ai {
+        private boolean enabled = false;
+        /** OpenAI-compatible base URL, ví dụ https://api.openai.com/v1 */
+        private String baseUrl = "https://api.openai.com/v1";
+        private String apiKey = "";
+        private String model = "gpt-4o-mini";
+        private int timeoutMs = 20000;
+    }
 
     @Getter
     @Setter

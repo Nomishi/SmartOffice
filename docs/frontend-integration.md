@@ -121,11 +121,19 @@ Event trả về định dạng JSON camelCase: `{"type":"...", "data":{...}, "t
 - `POST /api/users`: Tạo người dùng mới. Phân quyền: `ADMIN`.
 - `GET /api/audit-logs`: Nhật ký kiểm toán thao tác hệ thống. Phân quyền: `ADMIN`.
 
+### AI (tùy chọn)
+
+- `POST /api/ai/chat`: Hỏi AI dựa trên context DB. Phân quyền: mọi user đã đăng nhập.
+  - Body: `{"message":"...","deviceId":"office-env-01"}` (`deviceId` optional).
+  - Response: `{"answer":"...","model":"gpt-4o-mini","generatedAt":"..."}`.
+  - Cần bật `AI_ENABLED=true` + `AI_API_KEY` ở backend; nếu chưa bật trả `503 AI_UNAVAILABLE`.
+  - Chi tiết: [`ai-api.md`](ai-api.md).
+
 ---
 
 ## 5. Chuẩn phản hồi lỗi (Error Format)
 
-Tất cả các lỗi được trả về thống nhất theo chuẩn Contract v1.3:
+Tất cả các lỗi được trả về thống nhất theo chuẩn Contract v1.4:
 
 ```json
 {

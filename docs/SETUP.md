@@ -62,6 +62,7 @@ Mở `.env` và đổi mật khẩu. Lưu ý:
 - `BACKEND_MQTT_PASSWORD` phải trùng mật khẩu của user `backend` trong `MQTT_USERS`.
 - `JWT_SECRET` phải dài **≥ 32 ký tự**.
 - `SEED_DEV_USERS=true` để có tài khoản dev.
+- AI tùy chọn: `AI_ENABLED=true`, `AI_API_KEY`, `AI_MODEL`; xem [`ai-api.md`](ai-api.md).
 
 Chạy:
 

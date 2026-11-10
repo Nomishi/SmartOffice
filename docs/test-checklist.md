@@ -17,18 +17,21 @@ Kết quả tại thời điểm ghi:
 | Test class | Số test | Kết quả |
 | --- | ---: | --- |
 | `SmartOfficeApplicationTests` | 1 | PASS |
-| `ApiSmokeTest` | 9 | PASS |
+| `ApiSmokeTest` | 10 | PASS |
 | `AuthIntegrationTest` | 10 | PASS |
 | `StreamIntegrationTest` | 3 | PASS |
 | `RuleServiceTest` | 3 | PASS |
 | `EnergyServiceTest` | 1 | PASS |
 | `DeviceServiceTest` | 2 | PASS |
-| **Tổng** | **29** | **0 failure, 0 error** |
+| `AiIntegrationTest` | 1 | PASS |
+| **Tổng** | **31** | **0 failure, 0 error** |
 
 `ApiSmokeTest` kiểm tra: list devices seed, list rules seed, alerts endpoint, status endpoint,
 telemetry thiếu from/to → 400 `VALIDATION_ERROR`, telemetry device không tồn tại → 404 `NOT_FOUND`,
 telemetry mặc định `size=20`, command tới device offline → 409 `DEVICE_OFFLINE`,
-đăng ký device mới 201 `REGISTERED`, trùng `deviceId` → 409 `DEVICE_EXISTS`.
+đăng ký device mới 201 `REGISTERED`, trùng `deviceId` → 409 `DEVICE_EXISTS`,
+`POST /api/ai/chat` khi AI tắt → 503 `AI_UNAVAILABLE`.
+`AiIntegrationTest` mock `AiClient`, xác nhận endpoint build context (device + rule) và trả answer/model.
 `AuthIntegrationTest` kiểm tra: 401 khi chưa đăng nhập, login đúng/sai, JWT thật cho viewer/operator,
 viewer bị 403 khi gửi lệnh và khi đăng ký device, admin tạo/list user.
 `StreamIntegrationTest` kiểm tra: SSE yêu cầu auth (401), user đã xác thực kết nối được,
@@ -159,6 +162,9 @@ POST lại cùng deviceId → 409 DEVICE_EXISTS
   Docker image build OK; nginx `3000` proxy `/api` sang backend OK, SSE OK.
 - Simulator `tests/simulator/node_b_simulator.py` qua broker Docker có auth/ACL:
   command `light1 ON` + `door1 OPEN` → ACK `SUCCESS`, actuator đổi `light1=ON`, `door1=OPEN`.
+- AI API:
+  - `AI_ENABLED=false` → `503 AI_UNAVAILABLE`.
+  - Giả lập OpenAI-compatible endpoint + `AI_ENABLED=true` → `200`, trả answer/model.
 - Windows: `localhost:1883` có thể trúng Mosquitto service riêng; dùng IP LAN
   (`192.168.10.205:1883`) cho broker Docker hoặc tắt service.
 

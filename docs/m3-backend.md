@@ -36,7 +36,7 @@ Nhiệm vụ:
 | Rule engine + automation + alert | ✅ |
 | Flyway V1+V2 + `ddl-auto: validate` | ✅ đã verify PostgreSQL 16 sạch |
 | Dockerfile + compose backend | ✅ backend healthy, login OK |
-| Test tự động | ✅ 29 test pass |
+| Test tự động | ✅ 31 test pass |
 | Test ESP32/relay thật | ⏳ chưa có phần cứng |
 | P1/P2: config history, search/filter, audit đầy đủ, retention, rate limit, Testcontainers | ⏳ |
 
@@ -192,6 +192,7 @@ Chi tiết request/response: [`frontend-integration.md`](frontend-integration.md
 | --- | --- | --- | --- |
 | POST | `/api/auth/login` | Public | trả JWT |
 | POST | `/api/auth/register` | ADMIN | bootstrap khi DB trống |
+| POST | `/api/ai/chat` | Auth | hỏi AI dựa trên dữ liệu (tùy chọn) |
 | GET | `/api/users/me` | Auth | user hiện tại |
 | PUT | `/api/users/me/password` | Auth | đổi mật khẩu |
 | GET/POST | `/api/users` | ADMIN | quản lý user |
@@ -251,6 +252,11 @@ Mã chính: 400 `VALIDATION_ERROR`, 401 `UNAUTHORIZED|TOKEN_EXPIRED`, 403 `FORBI
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:3000,http://localhost:5173` |
 | `SEED_DEV_USERS` | `false` prod; `true` dev |
 | `ADMIN_PASSWORD` / `OPERATOR_PASSWORD` / `VIEWER_PASSWORD` | mật khẩu seed |
+| `AI_ENABLED` | `false` mặc định; bật `/api/ai/chat` |
+| `AI_BASE_URL` | `https://api.openai.com/v1` (OpenAI-compatible) |
+| `AI_API_KEY` | API key server-side, không đưa vào frontend |
+| `AI_MODEL` | `gpt-4o-mini` |
+| `AI_TIMEOUT_MS` | `20000` |
 
 Trong Docker: `DB_URL=jdbc:postgresql://postgres:5432/smartoffice`,
 `MQTT_BROKER_URL=tcp://mosquitto:1883`.
@@ -258,7 +264,7 @@ Trong Docker: `DB_URL=jdbc:postgresql://postgres:5432/smartoffice`,
 ## 12. Test
 
 ```text
-mvn verify → 29 test pass
+mvn verify → 31 test pass
 ```
 
 | Test class | Số test |

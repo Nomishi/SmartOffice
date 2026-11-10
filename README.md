@@ -114,14 +114,37 @@ python mock_publisher.py --scenario normal
 
 Hoặc `docker compose --profile mock up -d mock-publisher` trong `deployment/`.
 
+## AI API (tùy chọn)
+
+AI ngoài MVP, bật bằng env backend:
+
+```env
+AI_ENABLED=true
+AI_BASE_URL=https://api.openai.com/v1
+AI_API_KEY=...
+AI_MODEL=gpt-4o-mini
+```
+
+Gọi:
+
+```http
+POST /api/ai/chat
+Authorization: Bearer <JWT>
+
+{"message":"Nhiệt độ hôm nay có bất thường không?","deviceId":"office-env-01"}
+```
+
+Frontend chỉ gọi backend, không cầm API key. Chi tiết: [`docs/ai-api.md`](docs/ai-api.md).
+
 ## Trạng thái
 
 | Hạng mục | Trạng thái |
 | --- | --- |
-| Backend M3 | ✅ 29 test, auth/SSE/Flyway/Docker |
+| Backend M3 | ✅ 31 test, auth/SSE/Flyway/Docker |
 | Frontend M4 | ✅ 46 test, build + Docker |
 | Infra ACL/credential | ✅ |
 | Simulator M2 | ✅ command/ACK qua ACL |
+| AI API (tùy chọn) | ✅ `/api/ai/chat`, bật bằng env |
 | Full stack Docker | ✅ healthy |
 | ESP32 thật | ⏳ chưa test phần cứng |
 | Test web → relay thật | ⏳ |
@@ -136,6 +159,7 @@ Hoặc `docker compose --profile mock up -d mock-publisher` trong `deployment/`.
 | [`docs/frontend-setup.md`](docs/frontend-setup.md) | Setup frontend |
 | [`docs/frontend-integration.md`](docs/frontend-integration.md) | API/SSE cho M4 |
 | [`docs/m1-m2-test-guide.md`](docs/m1-m2-test-guide.md) | Test firmware M1/M2 |
+| [`docs/ai-api.md`](docs/ai-api.md) | AI API (OpenAI-compatible) |
 | [`docs/m3-api.http`](docs/m3-api.http) | Ví dụ gọi API |
 | [`docs/test-checklist.md`](docs/test-checklist.md) | Biên bản test |
 | [`database/README.md`](database/README.md) | Migration/ERD |

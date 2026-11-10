@@ -2,6 +2,14 @@
 
 Tài liệu thống nhất giao diện kết nối giữa M1, M2, M3, M4. Mọi thay đổi phải báo cả nhóm và sửa vào file này trước khi code.
 
+**Phiên bản 1.4 (10/11/2026)** – bổ sung AI như tính năng tùy chọn (ngoài MVP):
+
+- Thêm `POST /api/ai/chat`: frontend gọi backend, backend gọi AI provider bằng API key server-side.
+- AI trả lời dựa trên context DB (thiết bị, telemetry mới nhất, alert đang mở, rule); không gửi raw telemetry 5s/lần.
+- Bật bằng `AI_ENABLED=true`; hỗ trợ mọi API tương thích OpenAI Chat Completions.
+- Thêm mã lỗi `502 AI_UPSTREAM_ERROR` và `503 AI_UNAVAILABLE`.
+- AI vẫn **không bắt buộc cho MVP**; tắt mặc định.
+
 **Phiên bản 1.3 (07/11/2026)** – bổ sung sau khi M3 triển khai backend, không phá vỡ v1.2:
 
 - Chốt auth JWT + RBAC + quản lý user nằm **trong backend M3** (cùng Spring Boot), không tách service riêng.
@@ -225,6 +233,7 @@ Lifecycle thiết bị: `REGISTERED → PROVISIONED → ACTIVE ⇄ OFFLINE / FAU
 | --- | --- | --- | --- |
 | POST | `/api/auth/login` | public | đăng nhập, trả JWT |
 | POST | `/api/auth/register` | Admin | tạo tài khoản (bootstrap: cho phép public khi DB chưa có user nào) |
+| POST | `/api/ai/chat` | user | hỏi AI dựa trên dữ liệu hệ thống (tùy chọn) |
 | PUT | `/api/users/me/password` | user | đổi mật khẩu |
 | GET | `/api/users` | Admin | danh sách user |
 | POST | `/api/users` | Admin | tạo user |
@@ -272,6 +281,17 @@ Xác thực: header `Authorization: Bearer <JWT>`. Realtime: WebSocket hoặc SS
 {"token":"eyJhbGciOiJIUzI1NiJ9...","tokenType":"Bearer","expiresIn":3600,
  "user":{"userId":2,"username":"operator1","role":"OPERATOR","accountStatus":"ACTIVE"}}
 ```
+
+**POST `/api/ai/chat`** (tùy chọn) body `{"message":"Nhiệt độ hôm nay có bất thường không?","deviceId":"office-env-01"}` → 200
+
+```json
+{"answer":"Nhiệt độ hiện tại 28.5°C, chưa vượt ngưỡng 30°C. Không có alert TEMP_HIGH đang mở.",
+ "model":"gpt-4o-mini","generatedAt":"2026-11-10T08:00:00Z"}
+```
+
+- `deviceId` optional; bỏ trống thì backend lấy context toàn hệ thống.
+- Backend tự lấy dữ liệu DB và gọi AI provider; frontend không cầm API key.
+- Khi `AI_ENABLED=false` → 503 `AI_UNAVAILABLE`.
 
 **GET `/api/users`** → 200 (phân trang)
 
@@ -405,6 +425,8 @@ Xem cấu trúc `Rule` đầy đủ ở mục 9.1.
 | 409 | `CONFIG_CONFLICT` | Đang có config `PENDING` chưa ACK mà gửi config mới |
 | 429 | `RATE_LIMITED` | Quá số request cho phép |
 | 500 | `INTERNAL_ERROR` | Lỗi backend không xác định |
+| 502 | `AI_UPSTREAM_ERROR` | AI provider trả lỗi/không phản hồi |
+| 503 | `AI_UNAVAILABLE` | AI chưa bật hoặc thiếu `AI_API_KEY` |
 | 503 | `MQTT_UNAVAILABLE` | Backend chưa kết nối được MQTT broker, không publish được lệnh/config |
 | 504 | `COMMAND_TIMEOUT` | Hết timeout chờ ACK lệnh (5 giây; `door1` 10 giây) |
 | 504 | `CONFIG_TIMEOUT` | Hết timeout chờ ACK cấu hình (10 giây) |
