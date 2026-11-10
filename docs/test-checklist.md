@@ -158,7 +158,7 @@ POST lại cùng deviceId → 409 DEVICE_EXISTS
 ## 4. Test tích hợp M4/M2 (10/11/2026)
 
 - `deployment` full stack: backend + frontend + PostgreSQL + Mosquitto (ACL) đều healthy.
-- Frontend `frontend`: `npm ci`, `npm test` → **46 test pass**, `npm run build` OK,
+- Frontend `frontend`: `npm ci`, `npm test` → **49 test pass**, `npm run build` OK,
   Docker image build OK; nginx `3000` proxy `/api` sang backend OK, SSE OK.
 - Simulator `tests/simulator/node_b_simulator.py` qua broker Docker có auth/ACL:
   command `light1 ON` + `door1 OPEN` → ACK `SUCCESS`, actuator đổi `light1=ON`, `door1=OPEN`.

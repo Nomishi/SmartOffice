@@ -141,7 +141,7 @@ Frontend chỉ gọi backend, không cầm API key. Chi tiết: [`docs/ai-api.md
 | Hạng mục | Trạng thái |
 | --- | --- |
 | Backend M3 | ✅ 31 test, auth/SSE/Flyway/Docker |
-| Frontend M4 | ✅ 46 test, build + Docker |
+| Frontend M4 | ✅ 49 test, build + Docker, có UI Trợ lý AI |
 | Infra ACL/credential | ✅ |
 | Simulator M2 | ✅ command/ACK qua ACL |
 | AI API (tùy chọn) | ✅ `/api/ai/chat`, bật bằng env |

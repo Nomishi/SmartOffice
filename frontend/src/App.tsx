@@ -11,6 +11,7 @@ import DevicesPage from './pages/DevicesPage';
 import CommandsPage from './pages/CommandsPage';
 import RulesPage from './pages/RulesPage';
 import AuditPage from './pages/AuditPage';
+import AiPage from './pages/AiPage';
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="commands" element={<CommandsPage />} />
           <Route path="devices" element={<DevicesPage />} />
           <Route path="rules" element={<RulesPage />} />
+          <Route path="ai" element={<AiPage />} />
           {/* Nhật ký: Admin và Operator (Viewer bị chặn) */}
           <Route element={<RequireAuth roles={['ADMIN', 'OPERATOR']} />}>
             <Route path="audit" element={<AuditPage />} />

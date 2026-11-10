@@ -47,7 +47,7 @@ src/
   hooks/useRealtimeSync.ts   đẩy sự kiện realtime vào cache React Query
   auth/                AuthContext, bảng phân quyền (Contract mục 10)
   components/          AppLayout, RequireAuth, EnvCard (Node A), ControlCard (Node B), OpenAlertsCard
-  pages/               Login, Dashboard, Alerts, History (đo), Commands (lệnh), Energy, Devices, Rules, Audit (nhật ký), Users
+  pages/               Login, Dashboard, Alerts, History (đo), Commands (lệnh), Energy, Devices, Rules, AI, Audit (nhật ký), Users
 ```
 
 ## Đã làm / còn lại
@@ -59,10 +59,11 @@ src/
 - **Thiết bị:** đăng ký, kích hoạt, khóa, decommission (Admin, có hộp thoại xác nhận cho thao tác nguy hiểm); cấu hình tham số thiết bị từ xa (Admin/Operator).
 - **Ngưỡng/Rule:** xem (mọi role), bật/tắt và sửa tham số (Admin/Operator) với đúng dải giá trị ở Contract 9.1.
 - **Người dùng (Admin):** danh sách, tạo user.
+- **Trợ lý AI (tùy chọn):** chat với backend `/api/ai/chat`, chọn phạm vi thiết bị, gợi ý câu hỏi, xử lý 503/502 khi AI chưa bật.
 - **Nhật ký thao tác (Admin, Operator giới hạn):** ai làm gì, lúc nào, thành công hay bị từ chối.
 - **Chống thử mật khẩu:** nhận 429 `RATE_LIMITED` thì nút đăng nhập khóa và đếm ngược theo `Retry-After`.
 - **Header bảo mật Nginx:** Content-Security-Policy, X-Frame-Options, nosniff, Referrer-Policy (xem `nginx.conf`).
-- **Test tự động:** 41 test (backend giả, phân quyền, lớp gọi API, định dạng) trong các file `*.test.ts`.
+- **Test tự động:** 49 test (backend giả, phân quyền, lớp gọi API, định dạng) trong các file `*.test.ts`.
 
 **Còn làm:** đổi vai trò/khóa tài khoản user (Contract chưa có endpoint), biểu đồ telemetry dài hạn (cần M3, xem dưới), test giao diện React (cần thêm testing-library), kiểm tra giao diện trên màn hình nhỏ.
 

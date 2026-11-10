@@ -120,13 +120,15 @@ Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/ai/chat `
 
 ## 8. Frontend
 
-Gọi qua `/api/ai/chat` như các API khác (nginx proxy hoặc Vite proxy).
-Hiển thị:
+Trang **Trợ lý AI** (`/ai`) đã có trong `frontend/`:
 
-- answer dạng markdown/text
-- model + thời gian
-- lỗi 503 khi AI chưa bật
+- Chọn phạm vi: toàn hệ thống hoặc một thiết bị.
+- Gợi ý câu hỏi nhanh.
+- Gửi câu hỏi, hiển thị answer/model/thời gian.
+- Xử lý 503 `AI_UNAVAILABLE`, 502 `AI_UPSTREAM_ERROR`, 404.
+- Mock mode (`VITE_USE_MOCK=true`) trả câu trả lời giả để test UI.
 
+Frontend gọi qua `/api/ai/chat` như các API khác (nginx proxy hoặc Vite proxy).
 Không đưa `AI_API_KEY` vào biến `VITE_*`.
 
 ## 9. Test tự động

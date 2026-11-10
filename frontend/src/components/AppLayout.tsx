@@ -25,6 +25,7 @@ export default function AppLayout() {
     { key: '/energy', label: <Link to="/energy">Năng lượng</Link> },
     { key: '/devices', label: <Link to="/devices">Thiết bị</Link> },
     { key: '/rules', label: <Link to="/rules">Ngưỡng/Rule</Link> },
+    { key: '/ai', label: <Link to="/ai">Trợ lý AI</Link> },
     ...(can.viewAudit(user?.role) ? [{ key: '/audit', label: <Link to="/audit">Nhật ký</Link> }] : []),
     ...(can.manageUsers(user?.role) ? [{ key: '/users', label: <Link to="/users">Người dùng</Link> }] : []),
   ];

@@ -278,6 +278,35 @@ function describeAction(req: MockRequest): { action: string; target: string | nu
   return null;
 }
 
+function mockAiAnswer(message: string, deviceId?: string): string {
+  const lower = message.toLowerCase();
+  const env = devices['office-env-01'];
+  const ctrl = devices['office-ctrl-01'];
+  const selected = deviceId ? devices[deviceId] : undefined;
+
+  if (lower.includes('cảnh báo') || lower.includes('alert')) {
+    const open = alerts.filter((a) => a.status === 'OPEN');
+    return open.length
+      ? `Đang có ${open.length} cảnh báo mở: ${open.map((a) => `${a.type} (${a.deviceId})`).join(', ')}.`
+      : 'Hiện không có cảnh báo nào đang mở.';
+  }
+  if (lower.includes('năng lượng') || lower.includes('điện') || lower.includes('energy')) {
+    const p = ctrl?.latest;
+    return `Công suất mới nhất: đèn ${p?.light1PowerW ?? 0}W, quạt ${p?.fan1PowerW ?? 0}W. Nếu phòng trống mà công suất vẫn cao, kiểm tra rule ENERGY_WASTE.`;
+  }
+  if (lower.includes('nhiệt độ') || lower.includes('temperature')) {
+    return `Nhiệt độ mới nhất của Node A là ${env?.latest.temperature ?? '—'}°C, độ ẩm ${env?.latest.humidity ?? '—'}%. Ngưỡng TEMP_HIGH hiện tại là 30°C.`;
+  }
+  if (selected) {
+    return `Thiết bị ${selected.deviceId}: status=${selected.status}, online=${selected.online}, mode=${selected.mode}. ${
+      selected.type === 'ENV'
+        ? `Nhiệt độ ${selected.latest.temperature ?? '—'}°C, hiện diện=${selected.latest.presence ?? '—'}.`
+        : `Đèn=${selected.actuators?.light1 ?? '—'}, quạt=${selected.actuators?.fan1 ?? '—'}, cửa=${selected.actuators?.door1 ?? '—'}.`
+    }`;
+  }
+  return 'Tình trạng hiện tại: 2 node đang ACTIVE. Nhiệt độ khoảng 28.5°C, không có cảnh báo mở. Bạn có thể hỏi cụ thể về cảnh báo, năng lượng hoặc một thiết bị.';
+}
+
 // ---------- Router ----------
 async function route(req: MockRequest): Promise<MockResponse> {
   await sleep(100 + Math.random() * 120);
@@ -306,6 +335,23 @@ async function route(req: MockRequest): Promise<MockResponse> {
   if (!user) return fail(401, 'UNAUTHORIZED', 'Thiếu hoặc sai token đăng nhập');
   const canWrite = user.role === 'ADMIN' || user.role === 'OPERATOR';
   const forbidden = () => fail(403, 'FORBIDDEN', 'Bạn không có quyền thực hiện thao tác này');
+
+  if (method === 'POST' && path === '/api/ai/chat') {
+    const question = String(body.message ?? '').trim();
+    if (!question) return fail(400, 'VALIDATION_ERROR', 'message không được để trống');
+    if (question.length > 2000) return fail(400, 'VALIDATION_ERROR', 'message tối đa 2000 ký tự');
+    const selectedId = body.deviceId ? String(body.deviceId) : undefined;
+    if (selectedId && !devices[selectedId]) return fail(404, 'NOT_FOUND', 'Không tìm thấy thiết bị');
+    await sleep(450);
+    return {
+      status: 200,
+      body: {
+        answer: mockAiAnswer(question, selectedId),
+        model: 'mock-ai',
+        generatedAt: now(),
+      },
+    };
+  }
 
   if (method === 'GET' && path === '/api/devices') {
     return { status: 200, body: paginate(Object.values(devices).map(toDevice), query) };

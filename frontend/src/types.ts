@@ -191,3 +191,18 @@ export type RealtimeEvent =
   | { type: 'command'; command: Command }
   | { type: 'alert'; alert: Alert }
   | { type: 'config'; deviceId: string; configId: string; status: ConfigResult['status'] };
+
+// AI API (contract v1.4, tùy chọn)
+export interface AiChatResponse {
+  answer: string;
+  model: string;
+  generatedAt: string;
+}
+
+export interface AiChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  model?: string;
+  generatedAt?: string;
+}

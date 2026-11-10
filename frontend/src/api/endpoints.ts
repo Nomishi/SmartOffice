@@ -1,7 +1,7 @@
 import { request } from './client';
 import type {
   Alert, AlertStatus, AuditLog, Command, CommandAction, CommandTarget, ConfigResult, CreateUserInput, Device,
-  DeviceConfigInput, DeviceStatusDetail, RegisterDeviceInput, Rule, RulePatch, EnergyBucketSize, EnergyResponse, LatestTelemetry, LoginResponse, Mode, Page, User,
+  DeviceConfigInput, DeviceStatusDetail, RegisterDeviceInput, Rule, RulePatch, EnergyBucketSize, EnergyResponse, LatestTelemetry, LoginResponse, Mode, Page, User, AiChatResponse,
 } from '../types';
 
 // Mỗi hàm tương ứng một endpoint trong Contract mục 8.
@@ -78,3 +78,9 @@ export const changePassword = (oldPassword: string, newPassword: string) =>
 // ---- Nhật ký thao tác (Admin xem tất cả; Operator giới hạn) ----
 export const getAuditLogs = (page = 0, size = 20) =>
   request<Page<AuditLog>>('GET', '/api/audit-logs', { query: { page, size } });
+
+// ---- AI (tùy chọn, contract v1.4) ----
+export const askAi = (message: string, deviceId?: string) =>
+  request<AiChatResponse>('POST', '/api/ai/chat', {
+    body: { message, deviceId: deviceId || undefined },
+  });
