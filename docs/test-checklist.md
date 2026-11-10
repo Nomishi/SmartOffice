@@ -152,7 +152,17 @@ POST lại cùng deviceId → 409 DEVICE_EXISTS
 - [ ] Kiểm tra CORS với origin frontend thật.
 - [ ] Kiểm tra SSE nhận telemetry/alert/command realtime.
 
-## 4. Lưu ý khi chạy test
+## 4. Test tích hợp M4/M2 (10/11/2026)
+
+- `iot-infra` full stack: backend + frontend + PostgreSQL + Mosquitto (ACL) đều healthy.
+- Frontend `iot-frontend`: `npm ci`, `npm test` → **46 test pass**, `npm run build` OK,
+  Docker image build OK; nginx `3000` proxy `/api` sang backend OK, SSE OK.
+- Simulator `iot-node-b/simulated_node.py` qua broker Docker có auth/ACL:
+  command `light1 ON` + `door1 OPEN` → ACK `SUCCESS`, actuator đổi `light1=ON`, `door1=OPEN`.
+- Windows: `localhost:1883` có thể trúng Mosquitto service riêng; dùng IP LAN
+  (`192.168.10.205:1883`) cho broker Docker hoặc tắt service.
+
+## 5. Lưu ý khi chạy test
 
 - Nếu Windows Mosquitto service và Docker Mosquitto cùng bật, kiểm tra backend đang nối broker nào:
   `Get-NetTCPConnection -LocalPort 1883`.

@@ -1,6 +1,6 @@
 # Frontend – Phòng làm việc thông minh IoT (M4)
 
-React + Vite + TypeScript + Ant Design + TanStack Query + Recharts. Bám **Contract chung v1.2**.
+React + Vite + TypeScript + Ant Design + TanStack Query + Recharts. Bám **Contract chung v1.3**.
 
 ## Chạy thử (không cần backend)
 

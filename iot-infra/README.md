@@ -1,7 +1,7 @@
 # Hạ tầng – Phòng làm việc thông minh IoT (M4)
 
 Docker Compose cho **Mosquitto** (MQTT) và **PostgreSQL**, cấu hình **credential riêng từng thiết bị + ACL theo topic**,
-kèm **mock publisher** (thiết bị giả) và **script kiểm tra bảo mật** broker. Bám Contract chung v1.2 (mục 4, 5, 6, 11).
+kèm **mock publisher** (thiết bị giả) và **script kiểm tra bảo mật** broker. Bám Contract chung v1.3 (mục 4, 5, 6, 11).
 
 ## Chạy nhanh
 

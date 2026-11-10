@@ -1,11 +1,14 @@
-# M1/M2 — Test firmware với backend
+# M1/M2 — Test firmware với hệ thống
 
-Tài liệu cho M1 (Node A) và M2 (Node B) test firmware với broker + backend M3.
+Hướng dẫn test Node A (M1), Node B (M2) với broker + backend + frontend.
 
-## 0. Cần pull gì?
+## 0. Repo có gì?
 
-- Repo **không chứa code firmware M1/M2**. Firmware nằm ở máy/repo riêng của M1/M2.
-- Việc cần pull: contract + tài liệu test này.
+- `iot-node-b/` — firmware Node B + `simulated_node.py` (M2).
+- Backend M3: `backend/`.
+- Frontend M4: `iot-frontend/`.
+- Hạ tầng full stack: `iot-infra/` (Mosquitto ACL + PostgreSQL + backend + frontend).
+- Node A firmware có thể nằm ngoài repo; dùng contract/payload bên dưới.
 
 ```powershell
 git clone https://github.com/Nomishi/SmartOffice.git
@@ -13,223 +16,236 @@ cd SmartOffice
 git checkout feature/backend-complete
 ```
 
-Đọc trước:
+## 1. Chọn cách chạy
 
-- [`../Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](../Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md) v1.3
-- [`m3-backend.md`](m3-backend.md) mục MQTT contract
-- [`frontend-integration.md`](frontend-integration.md) nếu cần API
-
-Firmware chỉ cần kết nối **MQTT**, không cần Java/DB/REST.
-
-## 1. Broker đang chạy
-
-Backend Docker hiện tại:
-
-| Thông số | Giá trị |
-| --- | --- |
-| Broker host (từ PC) | `localhost` |
-| Broker port (từ PC) | **1884** |
-| Broker host (từ ESP32 cùng Wi-Fi) | **192.168.10.205** (IP Wi-Fi hiện tại, có thể đổi) |
-| Broker port (từ ESP32) | **1884** |
-| Auth dev | anonymous (không username/password) |
-| WebSocket | `localhost:9001` |
-
-Kiểm tra:
+### Cách A — Full stack `iot-infra` (khuyến nghị, có ACL)
 
 ```powershell
-docker compose ps mosquitto
-# Ports: 0.0.0.0:1884->1883/tcp
-
-Get-NetIPAddress -AddressFamily IPv4 |
-  Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } |
-  Select-Object InterfaceAlias, IPAddress
+cd iot-infra
+Copy-Item .env.example .env      # đổi mật khẩu; KHÔNG commit .env
+docker compose --profile ui up -d --build
+docker compose ps
 ```
 
-> Port host là **1884** vì Windows đang có Mosquitto service giữ 1883. Backend trong Docker
-> vẫn nối `mosquitto:1883` nội bộ nên không ảnh hưởng.
->
-> Nếu dùng broker Windows (service) thì port là **1883**.
->
-> ESP32 phải dùng Wi-Fi 2.4 GHz cùng mạng LAN với PC. Nếu không kết nối được, kiểm tra
-> Windows Firewall cho phép inbound port 1884 (hoặc 1883).
+Mặc định trong `.env.example`:
 
-Test broker từ điện thoại/MQTTX cùng Wi-Fi: host `192.168.10.205`, port `1884`.
+```env
+MQTT_USERS=backend:doi-mat-khau-backend,office-env-01:doi-mat-khau-env01,office-ctrl-01:doi-mat-khau-ctrl01
+```
+
+> Đọc `MQTT_USERS` trong `iot-infra/.env` để lấy username/password thật.
+> Username = `deviceId`; backend dùng username `backend`.
+
+Broker:
+
+| Từ đâu | Host | Port | Auth |
+| --- | --- | --- | --- |
+| ESP32 cùng Wi-Fi | IP LAN của PC, ví dụ `192.168.10.205` | `1883` | username=deviceId, password trong `MQTT_USERS` |
+| Từ chính PC | `192.168.10.205` (không dùng `localhost` nếu Windows có Mosquitto service) | `1883` | như trên |
+
+ACL: device chỉ publish `office/{deviceId}/telemetry|status|ack` và subscribe
+`office/{deviceId}/command|config`. Backend publish command/config, subscribe telemetry/status/ack.
+
+### Cách B — Backend-only `docker-compose.yml` gốc (anonymous)
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d
+```
+
+Broker host: IP LAN PC, port **1884** (do `MOSQUITTO_PORT=1884`), không auth.
+Backend `8080`, frontend không chạy trong stack này.
 
 ## 2. Device ID & topic
 
-| Node | deviceId | Topic chính |
+| Node | deviceId | Topic |
 | --- | --- | --- |
-| Node A | `office-env-01` | `office/office-env-01/telemetry`, `office/office-env-01/status` |
-| Node B | `office-ctrl-01` | `office/office-ctrl-01/telemetry`, `office/office-ctrl-01/status`, `office/office-ctrl-01/ack` |
+| Node A | `office-env-01` | `office/office-env-01/telemetry`, `.../status` |
+| Node B | `office-ctrl-01` | `office/office-ctrl-01/telemetry`, `.../status`, `.../ack` |
 
-Quy tắc bắt buộc:
+Quy tắc:
 
-- `deviceId` trong payload **phải trùng** deviceId trên topic.
-- QoS 1 cho telemetry/status/command/ack/config.
-- Status và config dùng **retained**.
-- Heartbeat: publish status mỗi 30s. Quá 90s không có dữ liệu → backend đánh `OFFLINE` + alert.
-- LWT: `{"online":false}` trên topic status, retained.
+- `deviceId` payload phải trùng topic.
+- QoS 1; status/config retained.
+- Heartbeat status 30s; quá 90s không dữ liệu → backend `OFFLINE` + alert.
+- LWT: `{"online":false}` trên status, retained.
+- Node B subscribe `office/office-ctrl-01/command` và `.../config`.
 
 ## 3. Payload mẫu
 
-### Node A telemetry (5s/lần)
+Node A telemetry (5s):
 
 ```json
 {"deviceId":"office-env-01","temperature":28.5,"humidity":72,"lux":320.5,"presence":true,"quality":"VALID","airRaw":1450,"rssi":-58}
 ```
 
-### Node A status (30s/lần, retained)
+Node A status (30s, retained):
 
 ```json
 {"online":true,"fwVersion":"1.0.0","mode":"AUTO"}
 ```
 
-### Node B telemetry công suất
+Node B telemetry:
 
 ```json
 {"deviceId":"office-ctrl-01","busVoltageV":12.1,"light1PowerW":4.8,"light1CurrentMa":397,"fan1PowerW":2.1,"fan1CurrentMa":173,"quality":"VALID","rssi":-61}
 ```
 
-### Node B status (retained)
+Node B status (retained):
 
 ```json
 {"online":true,"light1":"OFF","fan1":"OFF","buzzer1":"OFF","door1":"CLOSED","mode":"AUTO","fwVersion":"1.0.0"}
 ```
 
-### Node B ACK
+Node B ACK:
 
 ```json
 {"commandId":"CMD-0001","target":"light1","status":"SUCCESS","state":"ON","latencyMs":180}
 ```
 
-### Command backend gửi xuống
+Command backend gửi xuống:
 
 ```json
 {"commandId":"CMD-0001","target":"light1","action":"ON","issuedBy":"user-2"}
 ```
 
 `target`: `light1|fan1|buzzer1|door1`; `action`: `ON|OFF` (door: `OPEN|CLOSE`).
-Node B phải subscribe `office/office-ctrl-01/command` và trả ACK trong 5s (door 10s).
 
-## 4. Test nhanh bằng MQTTX / mosquitto_pub
+## 4. Test bằng MQTTX / mosquitto_pub
 
-### 4.1. Subscribe toàn bộ
+### Cách A — có auth
 
 ```powershell
-mosquitto_sub -h localhost -p 1884 -t "office/#" -v
+# Subscribe
+mosquitto_sub -h 192.168.10.205 -p 1883 -u office-ctrl-01 -P "mat-khau-ctrl01" -t "office/#" -v
+
+# Node A telemetry
+mosquitto_pub -h 192.168.10.205 -p 1883 -u office-env-01 -P "mat-khau-env01" `
+  -t office/office-env-01/telemetry -q 1 `
+  -m '{"deviceId":"office-env-01","temperature":31.5,"humidity":70,"lux":300,"presence":false,"quality":"VALID","airRaw":1200}'
+
+# Node B status retained
+mosquitto_pub -h 192.168.10.205 -p 1883 -u office-ctrl-01 -P "mat-khau-ctrl01" `
+  -t office/office-ctrl-01/status -q 1 -r `
+  -m '{"online":true,"light1":"OFF","fan1":"OFF","buzzer1":"OFF","door1":"CLOSED","mode":"AUTO","fwVersion":"1.0.0"}'
 ```
 
-### 4.2. Node A gửi telemetry giả
+Thay mật khẩu bằng giá trị thật trong `iot-infra/.env`.
+
+### Cách B — anonymous, port 1884
 
 ```powershell
-mosquitto_pub -h localhost -p 1884 -t office/office-env-01/telemetry -q 1 `
+mosquitto_sub -h 192.168.10.205 -p 1884 -t "office/#" -v
+mosquitto_pub -h 192.168.10.205 -p 1884 -t office/office-env-01/telemetry -q 1 `
   -m '{"deviceId":"office-env-01","temperature":31.5,"humidity":70,"lux":300,"presence":false,"quality":"VALID","airRaw":1200}'
 ```
 
-### 4.3. Node B gửi status + telemetry
+## 5. Kiểm tra backend
 
 ```powershell
-mosquitto_pub -h localhost -p 1884 -t office/office-ctrl-01/status -q 1 -r `
-  -m '{"online":true,"light1":"OFF","fan1":"OFF","buzzer1":"OFF","door1":"CLOSED","mode":"AUTO","fwVersion":"1.0.0"}'
-
-mosquitto_pub -h localhost -p 1884 -t office/office-ctrl-01/telemetry -q 1 `
-  -m '{"deviceId":"office-ctrl-01","busVoltageV":12.1,"light1PowerW":0,"fan1PowerW":0,"quality":"VALID"}'
-```
-
-## 5. Kiểm tra backend đã nhận
-
-```powershell
-$login = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/auth/login `
+$login = Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/auth/login `
   -ContentType "application/json" `
   -Body '{"username":"operator1","password":"operatorPassword123!"}'
 $token = $login.token
+$h = @{ Authorization = "Bearer $token" }
 
-# Node A mới nhất
-Invoke-RestMethod "http://localhost:8080/api/devices/office-env-01/status" `
-  -Headers @{ Authorization = "Bearer $token" }
-
-# Node B mới nhất
-Invoke-RestMethod "http://localhost:8080/api/devices/office-ctrl-01/status" `
-  -Headers @{ Authorization = "Bearer $token" }
+Invoke-RestMethod "http://localhost:3000/api/devices/office-env-01/status" -Headers $h
+Invoke-RestMethod "http://localhost:3000/api/devices/office-ctrl-01/status" -Headers $h
 ```
+
+Nếu dùng backend-only, đổi `http://localhost:3000` → `http://localhost:8080`.
 
 Telemetry history:
 
 ```powershell
 $from = (Get-Date).ToUniversalTime().AddMinutes(-10).ToString("yyyy-MM-ddTHH:mm:ssZ")
 $to = (Get-Date).ToUniversalTime().AddMinutes(1).ToString("yyyy-MM-ddTHH:mm:ssZ")
-Invoke-RestMethod "http://localhost:8080/api/devices/office-env-01/telemetry?from=$from&to=$to&size=20" `
-  -Headers @{ Authorization = "Bearer $token" }
+Invoke-RestMethod "http://localhost:3000/api/devices/office-env-01/telemetry?from=$from&to=$to&size=20" -Headers $h
 ```
 
 ## 6. Test command → ACK
 
-1. Node B publish status `online:true` (retained).
-2. Subscribe command trên Node B hoặc PC:
+1. Node B publish status `online:true`.
+2. Subscribe command:
 
 ```powershell
-mosquitto_sub -h localhost -p 1884 -t office/office-ctrl-01/command -v
+mosquitto_sub -h 192.168.10.205 -p 1883 -u office-ctrl-01 -P "mat-khau-ctrl01" `
+  -t office/office-ctrl-01/command -v
 ```
 
-3. Gửi lệnh từ API:
+3. Gửi lệnh qua API:
 
 ```powershell
 $body = @{ target = "light1"; action = "ON" } | ConvertTo-Json
 Invoke-RestMethod -Method Post `
-  -Uri "http://localhost:8080/api/devices/office-ctrl-01/commands?wait=true" `
+  -Uri "http://localhost:3000/api/devices/office-ctrl-01/commands?wait=true" `
   -Headers @{ Authorization = "Bearer $token"; "Idempotency-Key" = [guid]::NewGuid() } `
   -ContentType "application/json" -Body $body
 ```
 
-4. Node B nhận command, bật relay, publish ACK.
+4. Node B nhận command, đổi relay, publish ACK.
 5. Kiểm tra lịch sử:
 
 ```powershell
-Invoke-RestMethod "http://localhost:8080/api/devices/office-ctrl-01/commands" `
-  -Headers @{ Authorization = "Bearer $token" }
+Invoke-RestMethod "http://localhost:3000/api/devices/office-ctrl-01/commands" -Headers $h
 ```
 
-Kỳ vọng: command `SUCCESS`, `latencyMs` > 0, status actuator đổi.
+Kỳ vọng: `SUCCESS`, status actuator đổi.
 
-## 7. Test offline / LWT
+## 7. Chạy simulator Node B có sẵn
+
+```powershell
+$env:MQTT_HOST = "192.168.10.205"
+$env:MQTT_PORT = "1883"
+$env:MQTT_USERNAME = "office-ctrl-01"
+$env:MQTT_PASSWORD = "mat-khau-ctrl01"
+$env:PYTHONIOENCODING = "utf-8"
+python iot-node-b/simulated_node.py
+```
+
+Nếu backend-only anonymous:
+
+```powershell
+$env:MQTT_HOST = "localhost"
+$env:MQTT_PORT = "1884"
+python iot-node-b/simulated_node.py
+```
+
+Simulator publish status retained, telemetry 5s, heartbeat 30s; nhận command và trả ACK.
+
+## 8. Test offline / LWT
 
 - **LWT:** cấu hình Will topic `office/office-ctrl-01/status`, retained, payload `{"online":false}`.
-  Khi ESP32 mất kết nối, broker gửi LWT; backend tạo alert `DEVICE_OFFLINE` ngay.
-- **Mất heartbeat:** ngừng publish status/telemetry; sau **90s** backend tự đánh `OFFLINE` + alert.
-- Cắm lại/gửi dữ liệu mới: backend đưa về `ACTIVE`, alert tự đóng.
+  Mất kết nối → broker gửi LWT → backend tạo alert `DEVICE_OFFLINE` ngay.
+- **Mất heartbeat:** ngừng publish status/telemetry; sau **90s** backend đánh `OFFLINE` + alert.
+- Có dữ liệu mới → `ACTIVE`, alert tự đóng.
 
 Kiểm tra:
 
 ```powershell
-Invoke-RestMethod "http://localhost:8080/api/devices/office-ctrl-01/status" `
-  -Headers @{ Authorization = "Bearer $token" }
-
-Invoke-RestMethod "http://localhost:8080/api/alerts?status=OPEN" `
-  -Headers @{ Authorization = "Bearer $token" }
+Invoke-RestMethod "http://localhost:3000/api/devices/office-ctrl-01/status" -Headers $h
+Invoke-RestMethod "http://localhost:3000/api/alerts?status=OPEN" -Headers $h
 ```
 
-## 8. Lỗi thường gặp
+## 9. Lỗi thường gặp
 
 | Lỗi | Nguyên nhân |
 | --- | --- |
-| ESP32 không connect | Sai Wi-Fi 2.4GHz, sai IP PC, firewall chặn port 1884 |
-| Backend không thấy telemetry | `deviceId` payload khác topic, sai topic, QoS/JSON lỗi |
-| 404 device | Chưa đăng ký và `auto-register` tắt (dev đang bật) |
+| Kết nối bị từ chối (5) | Sai username/password, thiếu user trong `MQTT_USERS` |
+| Không connect được | Sai IP LAN, firewall, dùng `localhost` trúng Windows Mosquitto service |
+| Backend không thấy telemetry | Sai topic/deviceId, JSON lỗi, ACL chặn |
 | Command 409 `DEVICE_OFFLINE` | Node B chưa gửi status/telemetry trong 90s |
-| Command `TIMEOUT` | Node B không subscribe command hoặc không ACK trong 5s (door 10s) |
-| ACK không cập nhật | Sai `commandId`, sai topic ACK, JSON sai |
+| Command `TIMEOUT` | Không subscribe command hoặc ACK chậm > 5s (door 10s) |
+| ACK không cập nhật | Sai `commandId`, sai topic ACK, JSON thiếu field |
 | Door `FAILED` | Công tắc từ không khớp trạng thái servo |
 
-## 9. Checklist M1/M2
+## 10. Checklist M1/M2
 
-- [ ] ESP32 kết nối broker qua Wi-Fi 2.4GHz.
-- [ ] Node A telemetry 5s/lần đúng payload, có `quality`.
+- [ ] ESP32 kết nối broker Wi-Fi 2.4GHz, đúng user/password.
+- [ ] Node A telemetry 5s + quality.
 - [ ] Node A status heartbeat 30s.
-- [ ] Node B telemetry công suất đúng.
-- [ ] Node B status retained, có actuator + door.
-- [ ] Node B nhận command, đổi relay/servo, gửi ACK.
-- [ ] ACK cập nhật command `SUCCESS` trên backend.
-- [ ] LWT + quá 90s → `DEVICE_OFFLINE`.
+- [ ] Node B telemetry công suất + status retained.
+- [ ] Node B nhận command, đổi relay/servo, ACK.
+- [ ] ACK cập nhật command `SUCCESS` + actuator UI.
+- [ ] LWT / quá 90s → `DEVICE_OFFLINE`.
 - [ ] Cắm lại → `ACTIVE`, alert tự đóng.
-
-Khi xong checklist này, M3 có thể chuyển sang test end-to-end với M4 (web → relay → ACK).
