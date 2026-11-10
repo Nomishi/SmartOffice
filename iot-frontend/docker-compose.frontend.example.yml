@@ -1,0 +1,12 @@
+# Mẫu để M4 ghép vào docker-compose.yml chung (cùng Mosquitto, PostgreSQL, backend).
+# Tên service backend phải là `backend` và nghe cổng 8080, hoặc sửa nginx.conf cho khớp.
+services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_USE_MOCK: "false"
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
