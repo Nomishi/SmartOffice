@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 800" role="img" aria-label="Sơ đồ nối dây Node B: relay quạt ở GPIO26, LED ở GPIO27; INA219 ở GPIO5, 19; công tắc từ GPIO25; servo GPIO18; còi GPIO23 qua 2N2222; quạt chạy pin AA">
+<style>
+text { font-family: "IBM Plex Sans", "Segoe UI", Arial, sans-serif; fill: #16202b; }
+text { font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; fill: #16202b; }
+.t-title { font-size: 15px; font-weight: 700; }
+.t-name { font-size: 13.5px; font-weight: 600; }
+.t-sub { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 11px; fill: #5a6877; }
+.t-pin { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 11.5px; font-weight: 500; }
+.t-note { font-size: 12px; fill: #5a6877; }
+.t-flag { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 11px; font-weight: 600; }
+.panel { fill: none; stroke: #9aa7b4; stroke-width: 1; stroke-dasharray: 5 4; }
+.box { fill: #f7f9fb; stroke: #9aa7b4; stroke-width: 1.2; }
+.box-opt { fill: #f7f9fb; stroke: #9aa7b4; stroke-width: 1.2; stroke-dasharray: 5 4; }
+.mcu { fill: #e3ecf7; stroke: #2f5f93; stroke-width: 1.6; }
+.frame { fill: none; stroke: #2f5f93; stroke-width: 1.4; }
+.wire { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.flow { fill: none; stroke: #16202b; stroke-width: 1.6; }
+.wireless { fill: none; stroke: #2f5f93; stroke-width: 1.8; stroke-dasharray: 2 5; stroke-linecap: round; }
+.dashed { stroke-dasharray: 6 4; }
+.dot { stroke: none; }
+.res { fill: #ffffff; stroke: #16202b; stroke-width: 1.6; }
+.pin { stroke: #2f5f93; stroke-width: 2; }
+.c-5v { stroke: #d43d3d; } .f-5v { fill: #d43d3d; }
+.c-3v3 { stroke: #e08a1e; } .f-3v3 { fill: #e08a1e; }
+.c-gnd { stroke: #4a5563; } .f-gnd { fill: #4a5563; }
+.c-sda { stroke: #2b78c4; } .f-sda { fill: #2b78c4; }
+.c-scl { stroke: #1f9a6a; } .f-scl { fill: #1f9a6a; }
+.c-uart { stroke: #8a4fc4; } .f-uart { fill: #8a4fc4; }
+.c-sig { stroke: #b08a00; } .f-sig { fill: #b08a00; }
+.c-12 { stroke: #9c1f4f; } .f-12 { fill: #9c1f4f; }
+.c-fg { stroke: #16202b; } .f-fg { fill: #16202b; }
+.f-accent { fill: #2f5f93; }
+.t-badge { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12px; font-weight: 600; fill: #ffffff; }
+</style>
+<rect width="1100" height="800" fill="#ffffff"/>
+        <rect class="mcu" x="470" y="130" width="170" height="460" rx="8"/>
+        <text class="t-name" x="555" y="158" text-anchor="middle">ESP32 DevKit V1</text>
+        <text class="t-sub" x="555" y="176" text-anchor="middle">Node B</text>
+        <g>
+          <line class="pin" x1="460" y1="210" x2="470" y2="210"/><text class="t-pin" x="478" y="214">VIN</text>
+          <line class="pin" x1="460" y1="235" x2="470" y2="235"/><text class="t-pin" x="478" y="239">GND</text>
+          <line class="pin" x1="460" y1="360" x2="470" y2="360"/><text class="t-pin" x="478" y="364">D26</text>
+          <line class="pin" x1="460" y1="380" x2="470" y2="380"/><text class="t-pin" x="478" y="384">D27</text>
+          <line class="pin" x1="460" y1="460" x2="470" y2="460"/><text class="t-pin" x="478" y="464">D25</text>
+          <line class="pin" x1="640" y1="210" x2="650" y2="210"/><text class="t-pin" x="632" y="214" text-anchor="end">3V3</text>
+          <line class="pin" x1="640" y1="235" x2="650" y2="235"/><text class="t-pin" x="632" y="239" text-anchor="end">GND</text>
+          <line class="pin" x1="640" y1="300" x2="650" y2="300"/><text class="t-pin" x="632" y="304" text-anchor="end">D5 SDA</text>
+          <line class="pin" x1="640" y1="320" x2="650" y2="320"/><text class="t-pin" x="632" y="324" text-anchor="end">D19 SCL</text>
+          <line class="pin" x1="640" y1="470" x2="650" y2="470"/><text class="t-pin" x="632" y="474" text-anchor="end">D18</text>
+          <line class="pin" x1="640" y1="550" x2="650" y2="550"/><text class="t-pin" x="632" y="554" text-anchor="end">D23</text>
+        </g>
+        <path class="wire c-5v" d="M460 210 H430"/><text class="t-flag f-5v" x="424" y="214" text-anchor="end">5V</text>
+        <path class="wire c-gnd" d="M460 235 H430"/><text class="t-flag f-gnd" x="424" y="239" text-anchor="end">GND</text>
+        <path class="wire c-3v3" d="M650 210 H680"/><text class="t-flag f-3v3" x="686" y="214">3V3</text>
+        <path class="wire c-gnd" d="M650 235 H680"/><text class="t-flag f-gnd" x="686" y="239">GND</text>
+
+        <!-- Relay -->
+        <rect class="box" x="230" y="335" width="130" height="70" rx="4"/>
+        <text class="t-name" x="295" y="329" text-anchor="middle">Relay 1 kênh · jumper H</text>
+        <text class="t-pin" x="238" y="364">DC+</text><text class="t-pin" x="238" y="384">DC−</text>
+        <text class="t-pin" x="352" y="364" text-anchor="end">IN</text>
+        <path class="wire c-12" d="M230 360 H200"/><text class="t-flag f-12" x="194" y="364" text-anchor="end">+ pin AA</text>
+        <path class="wire c-gnd" d="M230 380 H200"/><text class="t-flag f-gnd" x="194" y="384" text-anchor="end">GND</text>
+        <path class="wire c-sig" d="M360 360 H460"/>
+        <text class="t-sub" x="410" y="352" text-anchor="middle">quạt fan1</text>
+        <path class="wire c-sig" d="M460 380 H420 V412 H384"/>
+        <text class="t-sub" x="440" y="398" text-anchor="middle">đèn</text>
+        <text class="t-flag f-sig" x="378" y="416" text-anchor="end">→ INA #2 → LED</text>
+        <text class="t-note" x="230" y="436">HIGH = quạt BẬT · COM–NO</text>
+
+        <!-- Reed -->
+        <rect class="box" x="230" y="445" width="130" height="50" rx="4"/>
+        <text class="t-name" x="295" y="439" text-anchor="middle">Công tắc từ (reed)</text>
+        <text class="t-pin" x="238" y="484">chân 2</text><text class="t-pin" x="352" y="464" text-anchor="end">chân 1</text>
+        <path class="wire c-gnd" d="M230 480 H200"/><text class="t-flag f-gnd" x="194" y="484" text-anchor="end">GND</text>
+        <path class="wire c-sig" d="M360 460 H460"/>
+        <text class="t-sub" x="410" y="452" text-anchor="middle">INPUT_PULLUP</text>
+        <text class="t-note" x="230" y="514">LOW (có nam châm) = CLOSED</text>
+        <text class="t-note" x="230" y="532">HIGH = OPEN</text>
+
+        <!-- I2C bus -->
+        <path class="wire c-sda" d="M650 300 H830 M720 300 V190 H830"/>
+        <circle class="dot f-sda" cx="720" cy="300" r="4"/>
+        <path class="wire c-scl" d="M650 320 H830 M750 320 V210 H830"/>
+        <circle class="dot f-scl" cx="750" cy="320" r="4"/>
+        <path class="wire c-sda dashed" d="M720 300 V400 H830"/>
+        <path class="wire c-scl dashed" d="M750 320 V420 H830"/>
+
+        <!-- INA #1 -->
+        <rect class="box" x="830" y="170" width="170" height="54" rx="4"/>
+        <text class="t-name" x="915" y="164" text-anchor="middle">INA219 #1 · 0x40 · quạt</text>
+        <text class="t-pin" x="838" y="194">SDA</text><text class="t-pin" x="838" y="214">SCL</text>
+        <text class="t-pin" x="992" y="194" text-anchor="end">VCC</text><text class="t-pin" x="992" y="214" text-anchor="end">GND</text>
+        <path class="wire c-3v3" d="M1000 190 H1030"/><text class="t-flag f-3v3" x="1036" y="194">3V3</text>
+        <path class="wire c-gnd" d="M1000 210 H1030"/><text class="t-flag f-gnd" x="1036" y="214">GND</text>
+        <!-- INA #2 -->
+        <rect class="box" x="830" y="280" width="170" height="54" rx="4"/>
+        <text class="t-name" x="915" y="274" text-anchor="middle">INA219 #2 · 0x41 · đèn</text>
+        <text class="t-pin" x="838" y="304">SDA</text><text class="t-pin" x="838" y="324">SCL</text>
+        <text class="t-pin" x="992" y="304" text-anchor="end">VCC</text><text class="t-pin" x="992" y="324" text-anchor="end">GND</text>
+        <path class="wire c-3v3" d="M1000 300 H1030"/><text class="t-flag f-3v3" x="1036" y="304">3V3</text>
+        <path class="wire c-gnd" d="M1000 320 H1030"/><text class="t-flag f-gnd" x="1036" y="324">GND</text>
+        <text class="t-note" x="915" y="350" text-anchor="middle">hàn cầu A0 để thành 0x41</text>
+        <!-- LCD optional -->
+        <rect class="box-opt" x="830" y="380" width="170" height="54" rx="4"/>
+        <text class="t-name" x="915" y="374" text-anchor="middle">LCD 1602 I2C · 0x27</text>
+        <text class="t-pin" x="838" y="404">SDA</text><text class="t-pin" x="838" y="424">SCL</text>
+        <text class="t-sub" x="992" y="414" text-anchor="end">tùy chọn</text>
+
+        <!-- Servo -->
+        <rect class="box" x="830" y="460" width="170" height="54" rx="4"/>
+        <text class="t-name" x="915" y="454" text-anchor="middle">Servo SG90 · cửa</text>
+        <text class="t-pin" x="838" y="474">SIG</text>
+        <text class="t-pin" x="992" y="484" text-anchor="end">V+</text><text class="t-pin" x="992" y="504" text-anchor="end">GND</text>
+        <path class="wire c-sig" d="M650 470 H830"/>
+        <text class="t-sub" x="740" y="462" text-anchor="middle">PWM 50 Hz</text>
+        <path class="wire c-12" d="M1000 480 H1030"/><text class="t-flag f-12" x="1036" y="484">+ pin AA</text>
+        <path class="wire c-gnd" d="M1000 500 H1030"/><text class="t-flag f-gnd" x="1036" y="510">GND</text>
+
+        <!-- Buzzer driver -->
+        <path class="wire c-sig" d="M650 550 H680 M740 550 H770"/>
+        <rect class="res" x="680" y="542" width="60" height="16" rx="2"/>
+        <text class="t-sub" x="710" y="536" text-anchor="middle">R</text>
+        <rect class="box" x="770" y="530" width="80" height="50" rx="4"/>
+        <text class="t-name" x="810" y="552" text-anchor="middle">2N2222</text>
+        <text class="t-sub" x="810" y="570" text-anchor="middle">B · C · E</text>
+        <path class="wire c-sig" d="M850 545 H880"/>
+        <text class="t-sub" x="865" y="539" text-anchor="middle">C</text>
+        <path class="wire c-gnd" d="M810 580 V600"/><text class="t-flag f-gnd" x="810" y="615" text-anchor="middle">GND (E)</text>
+        <rect class="box" x="880" y="530" width="120" height="40" rx="4"/>
+        <text class="t-name" x="940" y="555" text-anchor="middle">Còi 5V</text>
+        <text class="t-pin" x="888" y="566">−</text>
+        <path class="wire c-5v" d="M1000 550 H1030"/><text class="t-flag f-5v" x="1036" y="554">+5V</text>
+
+        <!-- Load circuit -->
+        <line x1="30" y1="640" x2="1070" y2="640" class="c-gnd" stroke-width="1" stroke-dasharray="4 4"/>
+        <text class="t-title" x="30" y="668">Mạch tải · quạt qua relay, LED từ GPIO27</text>
+        <rect class="box" x="30" y="690" width="110" height="80" rx="4"/>
+        <text class="t-name" x="85" y="722" text-anchor="middle">Hộp pin 3×AA</text>
+        <text class="t-sub" x="85" y="740" text-anchor="middle">≈4,5 V cho quạt</text>
+        <path class="wire c-12" d="M140 700 H300"/>
+        <path class="wire c-sig" d="M220 750 H300"/>
+        <text class="t-flag f-sig" x="214" y="754" text-anchor="end">GPIO27</text>
+        <rect class="box" x="300" y="688" width="140" height="24" rx="3"/><text class="t-sub" x="370" y="704" text-anchor="middle">INA #1 Vin+ → Vin−</text>
+        <rect class="box" x="300" y="738" width="140" height="24" rx="3"/><text class="t-sub" x="370" y="754" text-anchor="middle">INA #2 Vin+ → Vin−</text>
+        <path class="wire c-12" d="M440 700 H470"/><path class="wire c-sig" d="M440 750 H470"/>
+        <rect class="box" x="470" y="688" width="130" height="24" rx="3"/><text class="t-sub" x="535" y="704" text-anchor="middle">Relay COM → NO</text>
+        <rect class="box-opt" x="470" y="738" width="130" height="24" rx="3"/><text class="t-sub" x="535" y="754" text-anchor="middle">R ~220 Ω (nên có)</text>
+        <path class="wire c-12" d="M600 700 H630"/><path class="wire c-sig" d="M600 750 H630"/>
+        <rect class="box" x="630" y="688" width="150" height="24" rx="3"/><text class="t-sub" x="705" y="704" text-anchor="middle">Quạt mini ∥ diode (nên có)</text>
+        <rect class="box" x="630" y="738" width="150" height="24" rx="3"/><text class="t-sub" x="705" y="754" text-anchor="middle">LED 5 mm (light1)</text>
+        <path class="wire c-gnd" d="M780 700 H810 V750 M780 750 H810 M810 725 H840"/>
+        <circle class="dot f-gnd" cx="810" cy="725" r="4"/>
+        <text class="t-flag f-gnd" x="846" y="729">GND pin = GND chung với ESP32</text>
+      </svg>

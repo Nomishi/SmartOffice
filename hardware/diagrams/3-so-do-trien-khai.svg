@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 560" role="img" aria-label="Sơ đồ triển khai: hai ESP32 qua hotspot Wi-Fi tới laptop chạy Docker gồm Mosquitto, backend, PostgreSQL và frontend">
+<style>
+text { font-family: "IBM Plex Sans", "Segoe UI", Arial, sans-serif; fill: #16202b; }
+text { font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; fill: #16202b; }
+.t-title { font-size: 15px; font-weight: 700; }
+.t-name { font-size: 13.5px; font-weight: 600; }
+.t-sub { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 11px; fill: #5a6877; }
+.t-pin { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 11.5px; font-weight: 500; }
+.t-note { font-size: 12px; fill: #5a6877; }
+.t-flag { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 11px; font-weight: 600; }
+.panel { fill: none; stroke: #9aa7b4; stroke-width: 1; stroke-dasharray: 5 4; }
+.box { fill: #f7f9fb; stroke: #9aa7b4; stroke-width: 1.2; }
+.box-opt { fill: #f7f9fb; stroke: #9aa7b4; stroke-width: 1.2; stroke-dasharray: 5 4; }
+.mcu { fill: #e3ecf7; stroke: #2f5f93; stroke-width: 1.6; }
+.frame { fill: none; stroke: #2f5f93; stroke-width: 1.4; }
+.wire { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.flow { fill: none; stroke: #16202b; stroke-width: 1.6; }
+.wireless { fill: none; stroke: #2f5f93; stroke-width: 1.8; stroke-dasharray: 2 5; stroke-linecap: round; }
+.dashed { stroke-dasharray: 6 4; }
+.dot { stroke: none; }
+.res { fill: #ffffff; stroke: #16202b; stroke-width: 1.6; }
+.pin { stroke: #2f5f93; stroke-width: 2; }
+.c-5v { stroke: #d43d3d; } .f-5v { fill: #d43d3d; }
+.c-3v3 { stroke: #e08a1e; } .f-3v3 { fill: #e08a1e; }
+.c-gnd { stroke: #4a5563; } .f-gnd { fill: #4a5563; }
+.c-sda { stroke: #2b78c4; } .f-sda { fill: #2b78c4; }
+.c-scl { stroke: #1f9a6a; } .f-scl { fill: #1f9a6a; }
+.c-uart { stroke: #8a4fc4; } .f-uart { fill: #8a4fc4; }
+.c-sig { stroke: #b08a00; } .f-sig { fill: #b08a00; }
+.c-12 { stroke: #9c1f4f; } .f-12 { fill: #9c1f4f; }
+.c-fg { stroke: #16202b; } .f-fg { fill: #16202b; }
+.f-accent { fill: #2f5f93; }
+.t-badge { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12px; font-weight: 600; fill: #ffffff; }
+</style>
+<rect width="1100" height="560" fill="#ffffff"/>
+        <defs>
+          <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-fg"/></marker>
+        </defs>
+        <!-- Devices -->
+        <rect class="panel" x="20" y="40" width="250" height="330" rx="6"/>
+        <text class="t-title" x="36" y="66">Phòng làm việc</text>
+        <rect class="mcu" x="40" y="90" width="210" height="104" rx="6"/>
+        <text class="t-name" x="52" y="114">Node A · office-env-01</text>
+        <text class="t-sub" x="52" y="134">ESP32 · AHT20, BH1750,</text>
+        <text class="t-sub" x="52" y="150">LD2410C, MQ-135</text>
+        <text class="t-sub" x="52" y="174">node-a.ino + secrets.h</text>
+        <rect class="mcu" x="40" y="230" width="210" height="116" rx="6"/>
+        <text class="t-name" x="52" y="254">Node B · office-ctrl-01</text>
+        <text class="t-sub" x="52" y="274">ESP32 · relay, servo, còi,</text>
+        <text class="t-sub" x="52" y="290">công tắc từ, INA219 ×2</text>
+        <text class="t-sub" x="52" y="314">node-b.ino + secrets.h</text>
+
+        <!-- Hotspot -->
+        <rect class="box" x="300" y="170" width="160" height="104" rx="8"/>
+        <text class="t-name" x="380" y="198" text-anchor="middle">Hotspot điện thoại</text>
+        <text class="t-sub" x="380" y="220" text-anchor="middle">Wi-Fi 2.4 GHz</text>
+        <text class="t-sub" x="380" y="238" text-anchor="middle">DHCP cấp IP</text>
+        <text class="t-sub" x="380" y="256" text-anchor="middle">cho node + laptop</text>
+        <path class="wireless" d="M250 142 L300 200"/>
+        <path class="wireless" d="M250 288 L300 246"/>
+
+        <!-- Laptop -->
+        <rect class="frame" x="500" y="40" width="580" height="490" rx="8"/>
+        <text class="t-title" x="520" y="66">Laptop · Windows · Docker Desktop</text>
+        <rect class="panel" x="520" y="86" width="540" height="330" rx="6"/>
+        <text class="t-sub" x="536" y="106">Docker network iot-office</text>
+
+        <rect class="box" x="540" y="120" width="230" height="112" rx="5"/>
+        <text class="t-name" x="552" y="144">iot-mosquitto</text>
+        <text class="t-sub" x="552" y="164">eclipse-mosquitto 2.0.20</text>
+        <text class="t-sub" x="552" y="182">cổng 1883 · ACL theo deviceId</text>
+        <text class="t-sub" x="552" y="200">giữ retained: volume</text>
+        <text class="t-sub" x="552" y="218">mosquitto-data</text>
+
+        <rect class="box" x="810" y="120" width="230" height="112" rx="5"/>
+        <text class="t-name" x="822" y="144">iot-backend</text>
+        <text class="t-sub" x="822" y="164">Spring Boot · Java 17</text>
+        <text class="t-sub" x="822" y="182">cổng 8080 · REST, SSE</text>
+        <text class="t-sub" x="822" y="200">rule engine, cảnh báo,</text>
+        <text class="t-sub" x="822" y="218">JWT + phân quyền</text>
+
+        <rect class="box" x="540" y="280" width="230" height="112" rx="5"/>
+        <text class="t-name" x="552" y="304">iot-frontend</text>
+        <text class="t-sub" x="552" y="324">nginx 1.27 · bản build React</text>
+        <text class="t-sub" x="552" y="342">cổng 3000 → 80</text>
+        <text class="t-sub" x="552" y="360">/api → backend:8080</text>
+
+        <rect class="box" x="810" y="280" width="230" height="112" rx="5"/>
+        <text class="t-name" x="822" y="304">iot-postgres</text>
+        <text class="t-sub" x="822" y="324">PostgreSQL 16</text>
+        <text class="t-sub" x="822" y="342">cổng 5432 · volume pgdata</text>
+        <text class="t-sub" x="822" y="360">schema Flyway</text>
+
+        <rect class="box-opt" x="810" y="440" width="230" height="64" rx="5"/>
+        <text class="t-name" x="822" y="464">deployment/.env</text>
+        <text class="t-sub" x="822" y="484">MQTT_USERS, JWT_SECRET, DB</text>
+        <text class="t-sub" x="822" y="498">không commit lên GitHub</text>
+
+        <!-- Browser -->
+        <rect class="box" x="40" y="430" width="230" height="84" rx="6"/>
+        <text class="t-name" x="52" y="454">Trình duyệt người dùng</text>
+        <text class="t-sub" x="52" y="474">Admin · Operator · Viewer</text>
+        <text class="t-sub" x="52" y="494">http://&lt;IP laptop&gt;:3000</text>
+
+        <!-- Flows -->
+        <path class="flow" d="M460 210 H540" marker-start="url(#arr3)" marker-end="url(#arr3)"/>
+        <path class="flow" d="M770 176 H810" marker-start="url(#arr3)" marker-end="url(#arr3)"/>
+        <path class="flow" d="M925 232 V280" marker-end="url(#arr3)"/>
+        <path class="flow" d="M770 336 H790 V214 H810" marker-end="url(#arr3)"/>
+        <path class="flow" d="M270 472 H655 V392" marker-end="url(#arr3)"/>
+        <path class="flow dashed" d="M925 440 V392" marker-end="url(#arr3)"/>
+
+        <g>
+          <circle class="f-accent" cx="500" cy="210" r="11"/><text class="t-badge" x="500" y="214" text-anchor="middle">1</text>
+          <circle class="f-accent" cx="790" cy="176" r="11"/><text class="t-badge" x="790" y="180" text-anchor="middle">2</text>
+          <circle class="f-accent" cx="925" cy="256" r="11"/><text class="t-badge" x="925" y="260" text-anchor="middle">3</text>
+          <circle class="f-accent" cx="790" cy="276" r="11"/><text class="t-badge" x="790" y="280" text-anchor="middle">4</text>
+          <circle class="f-accent" cx="420" cy="472" r="11"/><text class="t-badge" x="420" y="476" text-anchor="middle">5</text>
+          <circle class="f-accent" cx="925" cy="418" r="11"/><text class="t-badge" x="925" y="422" text-anchor="middle">6</text>
+        </g>
+      </svg>
