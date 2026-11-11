@@ -206,3 +206,8 @@ export interface AiChatMessage {
   model?: string;
   generatedAt?: string;
 }
+
+export interface AiChatHistoryItem {
+  role: 'user' | 'assistant';
+  content: string;
+}

@@ -37,7 +37,7 @@ Hỗ trợ mọi API tương thích **OpenAI Chat Completions**:
 | Ollama local | `http://host.docker.internal:11434/v1` | `llama3.1` |
 | LM Studio | `http://host.docker.internal:1234/v1` | model đang load |
 
-Với Ollama/LM Studio, `AI_API_KEY` có thể đặt giá trị bất kỳ (ví dụ `local`).
+Với Ollama/LM Studio, có thể bỏ trống `AI_API_KEY`; backend sẽ không gửi header Authorization.
 
 Restart backend:
 
@@ -54,8 +54,12 @@ Authorization: Bearer <JWT>
 Content-Type: application/json
 
 {
-  "message": "Nhiệt độ hôm nay có bất thường không?",
-  "deviceId": "office-env-01"
+  "message": "Còn 24 giờ qua thì sao?",
+  "deviceId": "office-env-01",
+  "history": [
+    {"role": "user", "content": "Nhiệt độ hiện tại thế nào?"},
+    {"role": "assistant", "content": "Nhiệt độ mới nhất là 28,5°C."}
+  ]
 }
 ```
 
@@ -82,8 +86,10 @@ Backend chỉ gửi context ngắn:
 - Thiết bị: id, type, status, mode, online, actuator, lastSeen
 - Telemetry mới nhất: temperature, humidity, lux, presence, quality, airRaw
 - Power mới nhất: busVoltage, light1/fan1 power, quality
+- Thống kê 24 giờ: số mẫu, avg/min/max nhiệt độ, độ ẩm, lux, số mẫu quality khác VALID, số lần presence=true
 - Alert đang mở (tối đa 10)
 - Rule/ngưỡng hiện tại
+- Lịch sử hội thoại gần nhất (tối đa 8 tin, do frontend gửi lên)
 
 Không gửi raw telemetry 5 giây/lần, không gửi toàn bộ lịch sử.
 
@@ -92,14 +98,14 @@ Không gửi raw telemetry 5 giây/lần, không gửi toàn bộ lịch sử.
 - API key chỉ trong env backend, không trả ra frontend.
 - Endpoint yêu cầu JWT.
 - Không cho AI tự gửi lệnh điều khiển; AI chỉ tư vấn/giải thích.
-- Không lưu hội thoại AI vào DB (có thể thêm sau).
+- Không lưu hội thoại AI vào DB; frontend chỉ giữ tạm trong phiên và gửi tối đa 8 tin gần nhất.
 - Cần cân nhắc chi phí/rate limit của provider.
 
 ## 6. Mã lỗi
 
 | HTTP | code | Khi nào |
 | --- | --- | --- |
-| 400 | `VALIDATION_ERROR` | `message` rỗng/quá 2000 ký tự |
+| 400 | `VALIDATION_ERROR` | `message` rỗng/quá 2000 ký tự; `history` quá 10 tin hoặc sai role |
 | 401 | `UNAUTHORIZED` | Thiếu/sai JWT |
 | 404 | `NOT_FOUND` | `deviceId` không tồn tại |
 | 502 | `AI_UPSTREAM_ERROR` | Provider lỗi/timeout/không trả nội dung |
@@ -125,6 +131,8 @@ Trang **Trợ lý AI** (`/ai`) đã có trong `frontend/`:
 - Chọn phạm vi: toàn hệ thống hoặc một thiết bị.
 - Gợi ý câu hỏi nhanh.
 - Gửi câu hỏi, hiển thị answer/model/thời gian.
+- Gửi tối đa 8 tin gần nhất để AI hiểu câu hỏi nối tiếp.
+- Nút xóa hội thoại.
 - Xử lý 503 `AI_UNAVAILABLE`, 502 `AI_UPSTREAM_ERROR`, 404.
 - Mock mode (`VITE_USE_MOCK=true`) trả câu trả lời giả để test UI.
 
@@ -134,4 +142,5 @@ Không đưa `AI_API_KEY` vào biến `VITE_*`.
 ## 9. Test tự động
 
 - `ApiSmokeTest`: AI tắt → 503 `AI_UNAVAILABLE`.
-- `AiIntegrationTest`: mock `AiClient`, xác nhận build context + trả answer/model.
+- `AiIntegrationTest`: mock `AiClient`, xác nhận build context (thiết bị, thống kê 24h, history) + trả answer/model.
+- `ai.test.ts`: mock nhận history hợp lệ, từ chối history sai role.

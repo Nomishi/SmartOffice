@@ -6,22 +6,23 @@ import { ApiError, errMsg } from '../api/client';
 import { fmtTime } from '../format';
 import type { AiChatMessage } from '../types';
 
+const WELCOME: AiChatMessage = {
+  id: 'welcome',
+  role: 'assistant',
+  content:
+    'Xin chào, mình là trợ lý AI của SmartOffice. Mình có thể giải thích trạng thái phòng, cảnh báo, xu hướng 24 giờ và lịch sử năng lượng dựa trên dữ liệu backend. Mình chỉ tư vấn, không tự điều khiển thiết bị.',
+};
+
 const SUGGESTIONS = [
   'Tóm tắt tình trạng phòng hiện tại',
   'Có cảnh báo nào đang mở?',
-  'Nhiệt độ hôm nay có bất thường không?',
+  'Nhiệt độ 24 giờ qua có bất thường không?',
+  'Thiết bị nào đang offline?',
   'Vì sao có cảnh báo ENERGY_WASTE?',
 ];
 
 export default function AiPage() {
-  const [messages, setMessages] = useState<AiChatMessage[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content:
-        'Xin chào, mình là trợ lý AI của SmartOffice. Mình có thể giải thích trạng thái phòng, cảnh báo và lịch sử năng lượng dựa trên dữ liệu backend. Mình chỉ tư vấn, không tự điều khiển thiết bị.',
-    },
-  ]);
+  const [messages, setMessages] = useState<AiChatMessage[]>([WELCOME]);
   const [input, setInput] = useState('');
   const [deviceId, setDeviceId] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
@@ -45,6 +46,11 @@ export default function AiPage() {
       return;
     }
 
+    const history = messages
+      .filter((m) => m.id !== 'welcome')
+      .slice(-8)
+      .map((m) => ({ role: m.role, content: m.content }));
+
     const userMessage: AiChatMessage = {
       id: `u-${Date.now()}`,
       role: 'user',
@@ -56,7 +62,7 @@ export default function AiPage() {
     setLoading(true);
 
     try {
-      const result = await askAi(value, deviceId);
+      const result = await askAi(value, deviceId, history);
       setMessages((prev) => [
         ...prev,
         {
@@ -70,7 +76,7 @@ export default function AiPage() {
     } catch (e) {
       if (e instanceof ApiError) {
         if (e.code === 'AI_UNAVAILABLE') {
-          setError('AI chưa được bật. Cần cấu hình AI_ENABLED=true và AI_API_KEY ở backend.');
+          setError('AI chưa được bật. Cần cấu hình AI_ENABLED=true và AI_BASE_URL/AI_MODEL ở backend; provider cloud cần thêm AI_API_KEY.');
         } else if (e.code === 'AI_UPSTREAM_ERROR') {
           setError('AI provider đang lỗi hoặc timeout. Thử lại sau.');
         } else if (e.code === 'NOT_FOUND') {
@@ -88,11 +94,22 @@ export default function AiPage() {
 
   return (
     <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-      <div>
-        <Typography.Title level={4} style={{ margin: 0 }}>Trợ lý AI</Typography.Title>
-        <Typography.Text type="secondary">
-          Hỏi về trạng thái phòng, cảnh báo, năng lượng. AI chỉ tư vấn, không tự gửi lệnh điều khiển.
-        </Typography.Text>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <Typography.Title level={4} style={{ margin: 0 }}>Trợ lý AI</Typography.Title>
+          <Typography.Text type="secondary">
+            Hỏi về trạng thái phòng, cảnh báo, xu hướng 24 giờ và năng lượng. AI chỉ tư vấn, không tự gửi lệnh điều khiển.
+          </Typography.Text>
+        </div>
+        <Button
+          disabled={loading || messages.length <= 1}
+          onClick={() => {
+            setMessages([WELCOME]);
+            setError(null);
+          }}
+        >
+          Xóa hội thoại
+        </Button>
       </div>
 
       <Card size="small">
@@ -110,6 +127,9 @@ export default function AiPage() {
               label: `${d.name} (${d.deviceId})`,
             }))}
           />
+          <Typography.Text type="secondary">
+            AI nhận tối đa 8 tin gần nhất để hiểu câu hỏi nối tiếp.
+          </Typography.Text>
         </Space>
       </Card>
 

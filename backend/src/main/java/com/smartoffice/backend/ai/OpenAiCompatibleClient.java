@@ -20,6 +20,7 @@ import java.util.Map;
 /**
  * Client cho mọi API tương thích OpenAI Chat Completions:
  * OpenAI, Groq, Together, Ollama (/v1), LM Studio...
+ * API key là tùy chọn để hỗ trợ provider local không yêu cầu auth.
  */
 @Component
 @RequiredArgsConstructor
@@ -32,11 +33,6 @@ public class OpenAiCompatibleClient implements AiClient {
     @Override
     public String complete(String systemPrompt, String userPrompt) {
         SmartOfficeProperties.Ai ai = properties.getAi();
-        if (ai.getApiKey() == null || ai.getApiKey().isBlank()) {
-            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "AI_UNAVAILABLE",
-                    "Chưa cấu hình AI_API_KEY");
-        }
-
         String baseUrl = ai.getBaseUrl() == null || ai.getBaseUrl().isBlank()
                 ? "https://api.openai.com/v1"
                 : ai.getBaseUrl().replaceAll("/+$", "");
@@ -49,6 +45,7 @@ public class OpenAiCompatibleClient implements AiClient {
         Map<String, Object> body = Map.of(
                 "model", ai.getModel(),
                 "temperature", 0.2,
+                "max_tokens", 800,
                 "messages", List.of(
                         Map.of("role", "system", "content", systemPrompt),
                         Map.of("role", "user", "content", userPrompt)
@@ -56,13 +53,18 @@ public class OpenAiCompatibleClient implements AiClient {
         );
 
         try {
-            JsonNode response = RestClient.builder()
+            var request = RestClient.builder()
                     .requestFactory(factory)
                     .build()
                     .post()
                     .uri(url)
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + ai.getApiKey())
-                    .contentType(MediaType.APPLICATION_JSON)
+                    .contentType(MediaType.APPLICATION_JSON);
+
+            if (ai.getApiKey() != null && !ai.getApiKey().isBlank()) {
+                request = request.header(HttpHeaders.AUTHORIZATION, "Bearer " + ai.getApiKey());
+            }
+
+            JsonNode response = request
                     .body(body)
                     .retrieve()
                     .body(JsonNode.class);
@@ -77,9 +79,9 @@ public class OpenAiCompatibleClient implements AiClient {
         } catch (ApiException ex) {
             throw ex;
         } catch (RestClientResponseException ex) {
-            log.warn("AI API trả lỗi {}: {}", ex.getStatusCode(), ex.getResponseBodyAsString());
+            log.warn("AI API trả lời {}: {}", ex.getStatusCode(), ex.getResponseBodyAsString());
             throw new ApiException(HttpStatus.BAD_GATEWAY, "AI_UPSTREAM_ERROR",
-                    "AI API trả lỗi " + ex.getStatusCode().value());
+                    "AI API trả lời " + ex.getStatusCode().value());
         } catch (Exception ex) {
             log.warn("Không gọi được AI API: {}", ex.getMessage());
             throw new ApiException(HttpStatus.BAD_GATEWAY, "AI_UPSTREAM_ERROR",

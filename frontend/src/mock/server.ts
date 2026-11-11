@@ -284,6 +284,10 @@ function mockAiAnswer(message: string, deviceId?: string): string {
   const ctrl = devices['office-ctrl-01'];
   const selected = deviceId ? devices[deviceId] : undefined;
 
+  if (lower.includes('24') || lower.includes('xu hướng') || lower.includes('bất thường')) {
+    return 'Trong 24 giờ gần nhất, Node A có 240 mẫu VALID: nhiệt độ trung bình 28,4°C (thấp nhất 26,8°C, cao nhất 31,2°C), độ ẩm 71%, lux 318. Có 1 lần nhiệt độ vượt ngưỡng 30°C nhưng chưa đủ chuỗi để giữ cảnh báo TEMP_HIGH.';
+  }
+
   if (lower.includes('cảnh báo') || lower.includes('alert')) {
     const open = alerts.filter((a) => a.status === 'OPEN');
     return open.length
@@ -340,6 +344,11 @@ async function route(req: MockRequest): Promise<MockResponse> {
     const question = String(body.message ?? '').trim();
     if (!question) return fail(400, 'VALIDATION_ERROR', 'message không được để trống');
     if (question.length > 2000) return fail(400, 'VALIDATION_ERROR', 'message tối đa 2000 ký tự');
+    const history = Array.isArray(body.history) ? (body.history as Array<Record<string, unknown>>) : [];
+    if (history.length > 10) return fail(400, 'VALIDATION_ERROR', 'history tối đa 10 tin nhắn');
+    if (history.some((h) => !h || !['user', 'assistant'].includes(String(h.role)) || typeof h.content !== 'string')) {
+      return fail(400, 'VALIDATION_ERROR', 'history không hợp lệ');
+    }
     const selectedId = body.deviceId ? String(body.deviceId) : undefined;
     if (selectedId && !devices[selectedId]) return fail(404, 'NOT_FOUND', 'Không tìm thấy thiết bị');
     await sleep(450);

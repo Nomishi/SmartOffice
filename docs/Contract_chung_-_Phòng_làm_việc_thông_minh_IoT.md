@@ -282,7 +282,7 @@ Xác thực: header `Authorization: Bearer <JWT>`. Realtime: WebSocket hoặc SS
  "user":{"userId":2,"username":"operator1","role":"OPERATOR","accountStatus":"ACTIVE"}}
 ```
 
-**POST `/api/ai/chat`** (tùy chọn) body `{"message":"Nhiệt độ hôm nay có bất thường không?","deviceId":"office-env-01"}` → 200
+**POST `/api/ai/chat`** (tùy chọn) body `{"message":"Còn 24 giờ qua thì sao?","deviceId":"office-env-01","history":[{"role":"user","content":"Nhiệt độ hiện tại thế nào?"},{"role":"assistant","content":"Nhiệt độ mới nhất là 28,5°C."}]}` → 200
 
 ```json
 {"answer":"Nhiệt độ hiện tại 28.5°C, chưa vượt ngưỡng 30°C. Không có alert TEMP_HIGH đang mở.",
@@ -426,7 +426,7 @@ Xem cấu trúc `Rule` đầy đủ ở mục 9.1.
 | 429 | `RATE_LIMITED` | Quá số request cho phép |
 | 500 | `INTERNAL_ERROR` | Lỗi backend không xác định |
 | 502 | `AI_UPSTREAM_ERROR` | AI provider trả lỗi/không phản hồi |
-| 503 | `AI_UNAVAILABLE` | AI chưa bật hoặc thiếu `AI_API_KEY` |
+| 503 | `AI_UNAVAILABLE` | AI chưa bật (`AI_ENABLED=false`) |
 | 503 | `MQTT_UNAVAILABLE` | Backend chưa kết nối được MQTT broker, không publish được lệnh/config |
 | 504 | `COMMAND_TIMEOUT` | Hết timeout chờ ACK lệnh (5 giây; `door1` 10 giây) |
 | 504 | `CONFIG_TIMEOUT` | Hết timeout chờ ACK cấu hình (10 giây) |
