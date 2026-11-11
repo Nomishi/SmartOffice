@@ -501,3 +501,161 @@ docker compose --profile ui down
 # Reset sạch
 docker compose --profile ui down -v
 ```
+
+---
+
+## 16. Bản đồ chức năng hệ thống
+
+Tài liệu này thiên về **cách chạy**. Bảng dưới đây tóm tắt toàn bộ chức năng đã có để kiểm tra nhanh.
+
+### 16.1. Người dùng và phân quyền
+
+| Chức năng | Trạng thái | Ghi chú |
+|---|---|---|
+| Đăng nhập / đăng xuất | Có | JWT, token hết hạn sau 3600 giây |
+| Phân quyền Admin / Operator / Viewer | Có | Kiểm tra ở backend bằng Spring Security |
+| Admin quản lý người dùng | Có | Tạo tài khoản, xem danh sách |
+| Đổi mật khẩu | Có | `PUT /api/users/me/password` |
+| Khóa tài khoản | Một phần | Có trạng thái tài khoản, chưa có API khóa/mở riêng |
+
+### 16.2. Thiết bị và vòng đời
+
+| Chức năng | Trạng thái | Ghi chú |
+|---|---|---|
+| Đăng ký thiết bị | Có | Admin |
+| Kích hoạt / khóa / decommission | Có | `POST /api/devices/{id}/activate|lock|decommission` |
+| Trạng thái online/offline | Có | Heartbeat, LWT, timeout 90 giây |
+| Chế độ AUTO / MANUAL | Có | Automation không ghi đè MANUAL |
+| Xem trạng thái actuator | Có | `GET /api/devices/{id}/status` |
+| Cấu hình từ xa | Có | Chu kỳ telemetry, góc servo; có ACK |
+
+### 16.3. Giám sát môi trường
+
+| Chức năng | Trạng thái | Ghi chú |
+|---|---|---|
+| Nhiệt độ, độ ẩm | Có | AHT20 |
+| Ánh sáng | Có | BH1750 |
+| Hiện diện | Có | LD2410C |
+| Chất lượng không khí | Có | MQ-135, `airRaw` |
+| Công suất / dòng điện | Có | INA219 ×2 |
+| Dashboard realtime | Có | SSE, không cần F5 |
+| Lịch sử telemetry | Có | Lọc theo thiết bị, khoảng thời gian |
+| Thống kê năng lượng | Có | Wh theo raw/minute/hour/day |
+
+### 16.4. Điều khiển và còi
+
+| Chức năng | Trạng thái | Ghi chú |
+|---|---|---|
+| Bật/tắt đèn, quạt | Có | `light1`, `fan1` |
+| Điều khiển cửa mô hình | Có | `door1 OPEN/CLOSE` |
+| Còi ON/OFF | Có | `buzzer1 ON/OFF` |
+| Còi BEEP / BEEP2 / BEEP_LONG | Có | Kêu ngắn, 2 tiếng, dài |
+| Còi ALARM | Có | Hú lặp, tự tắt theo firmware |
+| Tự kêu khi có cảnh báo | Có | TEMP_HIGH, AIR_BAD, DOOR_LEFT_OPEN, ENERGY_WASTE |
+| Chống hú liên tục | Có | Cooldown 60 giây |
+| ACK / timeout / retry | Có | Command có trạng thái PENDING → SUCCESS/FAILED/TIMEOUT |
+| Chống gửi trùng | Có | `Idempotency-Key` |
+
+### 16.5. Cảnh báo, rule và tự động hóa
+
+| Chức năng | Trạng thái | Ghi chú |
+|---|---|---|
+| Cảnh báo nhiệt độ cao | Có | `TEMP_HIGH` |
+| Cảnh báo không khí xấu | Có | `AIR_BAD` |
+| Cảnh báo cửa mở lâu | Có | `DOOR_LEFT_OPEN` |
+| Cảnh báo thiết bị offline | Có | `DEVICE_OFFLINE` |
+| Cảnh báo lãng phí điện | Có | `ENERGY_WASTE` |
+| Cảnh báo cảm biến lỗi | Có | `SENSOR_FAULT` |
+| Xác nhận cảnh báo | Có | Operator/Admin |
+| Sửa ngưỡng / rule | Có | Admin/Operator |
+| Tự tắt đèn/quạt khi phòng trống | Có | Chỉ mode AUTO |
+| Tự tắt tải khi lãng phí điện | Có | Chỉ mode AUTO |
+| Lịch sử cảnh báo | Có | Có phân trang |
+
+### 16.6. API và tích hợp
+
+Các nhóm API chính:
+
+```text
+POST   /api/auth/login
+POST   /api/auth/register
+GET    /api/users/me
+PUT    /api/users/me/password
+GET    /api/users
+POST   /api/users
+
+GET    /api/devices
+POST   /api/devices
+GET    /api/devices/{id}/status
+GET    /api/devices/{id}/telemetry
+GET    /api/devices/{id}/energy
+GET    /api/devices/{id}/commands
+POST   /api/devices/{id}/commands
+POST   /api/devices/{id}/mode
+PUT    /api/devices/{id}/config
+POST   /api/devices/{id}/activate
+POST   /api/devices/{id}/lock
+POST   /api/devices/{id}/decommission
+
+GET    /api/alerts
+PATCH  /api/alerts/{id}/acknowledge
+GET    /api/rules
+PUT    /api/rules/{id}
+GET    /api/audit-logs
+GET    /api/stream
+POST   /api/ai/chat
+```
+
+Swagger:
+
+```text
+http://localhost:8080/swagger-ui/index.html
+```
+
+### 16.7. Giao thức và bảo mật
+
+| Hạng mục | Trạng thái |
+|---|---|
+| MQTT topic theo `deviceId` | Có |
+| QoS 1 cho telemetry/command/ACK | Có |
+| Retained status/config | Có |
+| LWT phát hiện mất kết nối | Có |
+| MQTT auth + ACL theo user | Có |
+| JWT + BCrypt | Có |
+| RBAC backend | Có |
+| Audit log | Có command/config |
+| TLS/HTTPS production | Chưa bật mặc định |
+
+### 16.8. Cơ sở dữ liệu và triển khai
+
+| Hạng mục | Trạng thái |
+|---|---|
+| PostgreSQL 16 | Có |
+| Flyway migration | Có |
+| 9 bảng nghiệp vụ | Có |
+| Docker Compose full stack | Có |
+| Nginx proxy REST + SSE | Có |
+| Swagger/OpenAPI | Có |
+| AI provider tùy chọn | Có |
+| Simulator Node A/B | Có |
+
+### 16.9. Phần cứng / firmware
+
+| Hạng mục | Trạng thái |
+|---|---|
+| Firmware Node A | Có trong repo |
+| Firmware Node B | Đang hoàn thiện, main có thể thay đổi |
+| Module còi `buzzer.cpp` | Có |
+| Sơ đồ đấu dây | Có trong `hardware/` |
+| Đo công suất INA219 | Có thiết kế, cần hiệu chuẩn |
+| OTA | Chưa có |
+| Telegram/email | Chưa có |
+
+### 16.10. Giới hạn hiện tại
+
+- Chưa phân quyền theo từng phòng/user.
+- Audit mới phủ command/config, chưa phủ rule/alert/user/device.
+- Chưa có retention telemetry và rate limit API.
+- AI phụ thuộc provider bên ngoài; có thể lỗi 429/timeout.
+- Firmware Node B đang trong quá trình hoàn thiện.
+- Chưa test đầy đủ với phần cứng thật.
