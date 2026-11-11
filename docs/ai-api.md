@@ -36,8 +36,11 @@ Hỗ trợ mọi API tương thích **OpenAI Chat Completions**:
 | Groq | `https://api.groq.com/openai/v1` | `llama-3.3-70b-versatile` |
 | Ollama local | `http://host.docker.internal:11434/v1` | `llama3.1` |
 | LM Studio | `http://host.docker.internal:1234/v1` | model đang load |
+| OpenCode Go | `https://opencode.ai/inference/go/openai/v1` | `glm-5.3-flash`, `kimi-k3`, `mimo-v2.6-flash` |
 
 Với Ollama/LM Studio, có thể bỏ trống `AI_API_KEY`; backend sẽ không gửi header Authorization.
+
+Với OpenCode Go, backend tự gửi header `x-opencode-session` vì provider yêu cầu header này.
 
 Restart backend:
 

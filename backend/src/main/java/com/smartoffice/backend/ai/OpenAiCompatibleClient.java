@@ -63,6 +63,10 @@ public class OpenAiCompatibleClient implements AiClient {
             if (ai.getApiKey() != null && !ai.getApiKey().isBlank()) {
                 request = request.header(HttpHeaders.AUTHORIZATION, "Bearer " + ai.getApiKey());
             }
+            if (url.contains("opencode.ai")) {
+                // OpenCode Go yêu cầu session id để route/cache; thiếu header này sẽ trả 400 MissingSessionID.
+                request = request.header("x-opencode-session", "smartoffice-backend");
+            }
 
             JsonNode response = request
                     .body(body)
