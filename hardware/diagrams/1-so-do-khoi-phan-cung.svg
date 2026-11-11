@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 700" role="img" aria-label="Sơ đồ khối phần cứng gồm Node A cảm biến và Node B chấp hành, cùng nối Wi-Fi tới máy chủ">
+<style>
+text { font-family: "IBM Plex Sans", "Segoe UI", Arial, sans-serif; fill: #16202b; }
+text { font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; fill: #16202b; }
+.t-title { font-size: 15px; font-weight: 700; }
+.t-name { font-size: 13.5px; font-weight: 600; }
+.t-sub { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 11px; fill: #5a6877; }
+.t-pin { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 11.5px; font-weight: 500; }
+.t-note { font-size: 12px; fill: #5a6877; }
+.t-flag { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 11px; font-weight: 600; }
+.panel { fill: none; stroke: #9aa7b4; stroke-width: 1; stroke-dasharray: 5 4; }
+.box { fill: #f7f9fb; stroke: #9aa7b4; stroke-width: 1.2; }
+.box-opt { fill: #f7f9fb; stroke: #9aa7b4; stroke-width: 1.2; stroke-dasharray: 5 4; }
+.mcu { fill: #e3ecf7; stroke: #2f5f93; stroke-width: 1.6; }
+.frame { fill: none; stroke: #2f5f93; stroke-width: 1.4; }
+.wire { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.flow { fill: none; stroke: #16202b; stroke-width: 1.6; }
+.wireless { fill: none; stroke: #2f5f93; stroke-width: 1.8; stroke-dasharray: 2 5; stroke-linecap: round; }
+.dashed { stroke-dasharray: 6 4; }
+.dot { stroke: none; }
+.res { fill: #ffffff; stroke: #16202b; stroke-width: 1.6; }
+.pin { stroke: #2f5f93; stroke-width: 2; }
+.c-5v { stroke: #d43d3d; } .f-5v { fill: #d43d3d; }
+.c-3v3 { stroke: #e08a1e; } .f-3v3 { fill: #e08a1e; }
+.c-gnd { stroke: #4a5563; } .f-gnd { fill: #4a5563; }
+.c-sda { stroke: #2b78c4; } .f-sda { fill: #2b78c4; }
+.c-scl { stroke: #1f9a6a; } .f-scl { fill: #1f9a6a; }
+.c-uart { stroke: #8a4fc4; } .f-uart { fill: #8a4fc4; }
+.c-sig { stroke: #b08a00; } .f-sig { fill: #b08a00; }
+.c-12 { stroke: #9c1f4f; } .f-12 { fill: #9c1f4f; }
+.c-fg { stroke: #16202b; } .f-fg { fill: #16202b; }
+.f-accent { fill: #2f5f93; }
+.t-badge { font-family: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12px; font-weight: 600; fill: #ffffff; }
+</style>
+<rect width="1100" height="700" fill="#ffffff"/>
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-fg"/></marker>
+        </defs>
+
+        <!-- Node A panel -->
+        <rect class="panel" x="20" y="30" width="525" height="500" rx="6"/>
+        <text class="t-title" x="40" y="58">NODE A · office-env-01 · cảm nhận môi trường</text>
+
+        <rect class="box" x="235" y="90" width="140" height="56" rx="4"/>
+        <text class="t-name" x="305" y="113" text-anchor="middle">Nguồn 5V USB</text>
+        <text class="t-sub" x="305" y="132" text-anchor="middle">laptop / củ sạc</text>
+        <path class="flow" d="M305 146 V210" marker-end="url(#arr)"/>
+        <text class="t-note" x="395" y="108">5V (VIN): LD2410C, MQ-135</text>
+        <text class="t-note" x="395" y="128">3V3: AHT20, BH1750</text>
+
+        <rect class="mcu" x="235" y="210" width="140" height="110" rx="6"/>
+        <text class="t-name" x="305" y="252" text-anchor="middle">ESP32 DevKit V1</text>
+        <text class="t-sub" x="305" y="272" text-anchor="middle">node-a.ino</text>
+        <text class="t-sub" x="305" y="290" text-anchor="middle">fw 1.0.0</text>
+
+        <rect class="box" x="40" y="90" width="150" height="56" rx="4"/>
+        <text class="t-name" x="115" y="113" text-anchor="middle">AHT20</text>
+        <text class="t-sub" x="115" y="132" text-anchor="middle">nhiệt độ, độ ẩm · 0x38</text>
+        <rect class="box" x="40" y="160" width="150" height="56" rx="4"/>
+        <text class="t-name" x="115" y="183" text-anchor="middle">BH1750</text>
+        <text class="t-sub" x="115" y="202" text-anchor="middle">ánh sáng · 0x23</text>
+        <path class="flow" d="M190 118 H212 M190 188 H212 M212 118 V240 H235" marker-end="url(#arr)"/>
+        <text class="t-sub" x="216" y="234">I2C</text>
+
+        <rect class="box" x="40" y="240" width="150" height="56" rx="4"/>
+        <text class="t-name" x="115" y="263" text-anchor="middle">LD2410C</text>
+        <text class="t-sub" x="115" y="282" text-anchor="middle">radar hiện diện</text>
+        <path class="flow" d="M190 268 H235" marker-start="url(#arr)" marker-end="url(#arr)"/>
+        <text class="t-sub" x="196" y="262">UART</text>
+
+        <rect class="box" x="40" y="320" width="150" height="56" rx="4"/>
+        <text class="t-name" x="115" y="343" text-anchor="middle">MQ-135</text>
+        <text class="t-sub" x="115" y="362" text-anchor="middle">chất lượng không khí</text>
+        <path class="flow" d="M115 376 V400" marker-end="url(#arr)"/>
+        <rect class="box" x="40" y="400" width="150" height="56" rx="4"/>
+        <text class="t-name" x="115" y="423" text-anchor="middle">Cầu phân áp</text>
+        <text class="t-sub" x="115" y="442" text-anchor="middle">20k / 10k · ≤ 1,67 V</text>
+        <path class="flow" d="M190 428 H222 V300 H235" marker-end="url(#arr)"/>
+        <text class="t-sub" x="226" y="420">ADC</text>
+
+        <rect class="box" x="395" y="237" width="135" height="56" rx="4"/>
+        <text class="t-name" x="462" y="260" text-anchor="middle">LED D2</text>
+        <text class="t-sub" x="462" y="279" text-anchor="middle">báo trạng thái mạng</text>
+        <path class="flow" d="M375 265 H395" marker-end="url(#arr)"/>
+
+        <rect class="box" x="235" y="420" width="140" height="56" rx="4"/>
+        <text class="t-name" x="305" y="443" text-anchor="middle">Wi-Fi 2.4 GHz</text>
+        <text class="t-sub" x="305" y="462" text-anchor="middle">tích hợp ESP32</text>
+        <path class="flow" d="M305 320 V420" marker-start="url(#arr)" marker-end="url(#arr)"/>
+
+        <!-- Node B panel -->
+        <rect class="panel" x="560" y="30" width="530" height="500" rx="6"/>
+        <text class="t-title" x="580" y="58">NODE B · office-ctrl-01 · chấp hành, đo công suất</text>
+
+        <rect class="box" x="775" y="90" width="140" height="56" rx="4"/>
+        <text class="t-name" x="845" y="113" text-anchor="middle">Nguồn 5V USB</text>
+        <text class="t-sub" x="845" y="132" text-anchor="middle">ESP32, còi, INA219</text>
+        <path class="flow" d="M845 146 V210" marker-end="url(#arr)"/>
+
+        <rect class="mcu" x="775" y="210" width="140" height="110" rx="6"/>
+        <text class="t-name" x="845" y="252" text-anchor="middle">ESP32 DevKit V1</text>
+        <text class="t-sub" x="845" y="272" text-anchor="middle">node-b.ino</text>
+        <text class="t-sub" x="845" y="290" text-anchor="middle">fw 1.0.0</text>
+
+        <rect class="box" x="580" y="90" width="150" height="56" rx="4"/>
+        <text class="t-name" x="655" y="113" text-anchor="middle">INA219 #1 · 0x40</text>
+        <text class="t-sub" x="655" y="132" text-anchor="middle">áp, dòng tải quạt</text>
+        <rect class="box" x="580" y="160" width="150" height="56" rx="4"/>
+        <text class="t-name" x="655" y="183" text-anchor="middle">INA219 #2 · 0x41</text>
+        <text class="t-sub" x="655" y="202" text-anchor="middle">áp, dòng tải đèn</text>
+        <path class="flow" d="M730 118 H752 M730 188 H752 M752 118 V240 H775" marker-end="url(#arr)"/>
+        <text class="t-sub" x="756" y="234">I2C</text>
+
+        <rect class="box" x="580" y="240" width="150" height="56" rx="4"/>
+        <text class="t-name" x="655" y="263" text-anchor="middle">Công tắc từ (reed)</text>
+        <text class="t-sub" x="655" y="282" text-anchor="middle">xác nhận cửa đóng/mở</text>
+        <path class="flow" d="M730 268 H775" marker-end="url(#arr)"/>
+
+        <rect class="box-opt" x="580" y="320" width="150" height="56" rx="4"/>
+        <text class="t-name" x="655" y="343" text-anchor="middle">LCD 1602 · 0x27</text>
+        <text class="t-sub" x="655" y="362" text-anchor="middle">tùy chọn, chưa lắp</text>
+        <path class="flow dashed" d="M730 348 H762 V300 H775" marker-end="url(#arr)"/>
+        <rect class="box" x="580" y="390" width="150" height="56" rx="4"/>
+        <text class="t-name" x="655" y="413" text-anchor="middle">LED 5 mm (đèn)</text>
+        <text class="t-sub" x="655" y="432" text-anchor="middle">GPIO27 · qua INA 0x41</text>
+        <path class="flow" d="M775 312 H745 V418 H730" marker-end="url(#arr)"/>
+
+        <rect class="box" x="935" y="90" width="140" height="56" rx="4"/>
+        <text class="t-name" x="1005" y="113" text-anchor="middle">Relay 1 kênh</text>
+        <text class="t-sub" x="1005" y="132" text-anchor="middle">GPIO26 · kích HIGH</text>
+        <path class="flow" d="M915 225 H925 V118 H935" marker-end="url(#arr)"/>
+        <rect class="box" x="935" y="160" width="140" height="56" rx="4"/>
+        <text class="t-name" x="1005" y="183" text-anchor="middle">Quạt DC mini</text>
+        <text class="t-sub" x="1005" y="202" text-anchor="middle">tiếp điểm COM–NO</text>
+        <path class="flow" d="M1005 146 V160" marker-end="url(#arr)"/>
+
+        <rect class="box" x="935" y="240" width="140" height="56" rx="4"/>
+        <text class="t-name" x="1005" y="263" text-anchor="middle">Servo SG90</text>
+        <text class="t-sub" x="1005" y="282" text-anchor="middle">cửa mô hình · PWM</text>
+        <path class="flow" d="M915 268 H935" marker-end="url(#arr)"/>
+
+        <rect class="box" x="935" y="320" width="140" height="56" rx="4"/>
+        <text class="t-name" x="1005" y="343" text-anchor="middle">Còi 5V</text>
+        <text class="t-sub" x="1005" y="362" text-anchor="middle">qua NPN 2N2222</text>
+        <path class="flow" d="M915 300 H925 V348 H935" marker-end="url(#arr)"/>
+
+        <rect class="box" x="775" y="420" width="140" height="56" rx="4"/>
+        <text class="t-name" x="845" y="443" text-anchor="middle">Wi-Fi 2.4 GHz</text>
+        <text class="t-sub" x="845" y="462" text-anchor="middle">tích hợp ESP32</text>
+        <path class="flow" d="M845 320 V420" marker-start="url(#arr)" marker-end="url(#arr)"/>
+
+        <rect class="box" x="935" y="420" width="140" height="56" rx="4"/>
+        <text class="t-name" x="1005" y="443" text-anchor="middle">Hộp 3 pin AA</text>
+        <text class="t-sub" x="1005" y="462" text-anchor="middle">quạt · servo · relay</text>
+        <path class="flow" d="M1075 448 H1082 V188 H1075" marker-end="url(#arr)"/>
+        <text class="t-note" x="580" y="476">Mọi nguồn chung GND</text>
+
+        <!-- Mạng -->
+        <path class="wireless" d="M305 476 L410 590"/>
+        <path class="wireless" d="M845 476 L470 590"/>
+        <rect class="box" x="330" y="590" width="200" height="64" rx="6"/>
+        <text class="t-name" x="430" y="616" text-anchor="middle">Hotspot điện thoại</text>
+        <text class="t-sub" x="430" y="636" text-anchor="middle">Wi-Fi 2.4 GHz · DHCP</text>
+        <path class="flow" d="M530 622 H620" marker-end="url(#arr)"/>
+        <text class="t-sub" x="575" y="612" text-anchor="middle">TCP 1883</text>
+        <rect class="mcu" x="620" y="590" width="300" height="64" rx="6"/>
+        <text class="t-name" x="770" y="616" text-anchor="middle">Laptop · Docker</text>
+        <text class="t-sub" x="770" y="636" text-anchor="middle">Mosquitto · Backend · PostgreSQL · Web</text>
+        <text class="t-note" x="40" y="612">Hai node gửi MQTT qua Wi-Fi.</text>
+        <text class="t-note" x="40" y="630">Chi tiết ở sơ đồ triển khai (mục 3).</text>
+      </svg>

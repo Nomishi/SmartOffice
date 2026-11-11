@@ -2,6 +2,14 @@
 
 Tài liệu thống nhất giao diện kết nối giữa M1, M2, M3, M4. Mọi thay đổi phải báo cả nhóm và sửa vào file này trước khi code.
 
+**Phiên bản 1.5 (11/11/2026)** – cập nhật theo mạch thật đang chạy (đã kiểm tra bằng firmware `firmware/node-a`, `firmware/node-b`):
+
+- Node B dùng **relay 5V 1 kênh** (kích mức HIGH) chỉ cho quạt; đèn `light1` là **LED 5 mm** nối trực tiếp GPIO 27.
+- **Hộp 3 pin AA (≈4,5 V)** cấp nguồn cho quạt DC mini, servo SG90 và relay 1 kênh; ESP32 và còi lấy 5V qua USB. Không dùng nguồn 12V, cầu chì.
+- Chân Node B: quạt GPIO 26, LED GPIO 27, I2C **SDA 5 / SCL 19**.
+- INA219 `0x40` đo **quạt**, INA219 `0x41` (hàn A0) đo **đèn**.
+- Thêm bảng chân GPIO đầy đủ của Node A và Node B (mục 1).
+
 **Phiên bản 1.4 (10/11/2026)** – bổ sung AI như tính năng tùy chọn (ngoài MVP):
 
 - Thêm `POST /api/ai/chat`: frontend gọi backend, backend gọi AI provider bằng API key server-side.
@@ -49,14 +57,42 @@ Tài liệu thống nhất giao diện kết nối giữa M1, M2, M3, M4. Mọi 
 
 | Phần cứng | Trạng thái |
 | --- | --- |
-| ESP32 ×2, relay 5V 2 kênh, BH1750, MQ-135, LD2410C, INA219 ×2, servo SG90, công tắc từ FR3S, buzzer 5V, breadboard, quạt tản nhiệt DC 12V | Đã có |
-| Cảm biến nhiệt-ẩm **AHT20**, đèn DC 12V, nguồn 12V, nguồn 5V, tụ 1000µF, diode, cầu chì, dây/terminal/jumper | Giả định đã có – **cần xác nhận** (riêng AHT20 đã chốt mua/đã có) |
+| ESP32 ×2, relay 5V 1 kênh, BH1750, MQ-135, LD2410C, INA219 ×2, servo SG90, công tắc từ (reed switch), buzzer + transistor 2N2222, breadboard | Đã có, đã lắp |
+| Cảm biến nhiệt-ẩm AHT20, LED 5 mm (đèn `light1`), quạt DC mini (quạt `fan1`), hộp 3 pin AA (nguồn quạt, servo, relay), dây jumper | Đã có, đã lắp |
+| Đèn DC 12V, nguồn 12V, cầu chì, tụ 1000µF, diode | Không dùng trong mô hình hiện tại (tải là LED và quạt mini chạy pin) |
 | PIR, LDR | Không dùng nữa (LD2410C thay PIR, BH1750 thay LDR) |
 | DHT22, LM393, biến trở, LED RGB | Không mua |
 
-**Đã chốt:** làm cửa mô hình (servo SG90 + công tắc từ), MQ-135 và INA219 (2 cái: một cho đèn, một cho quạt). `door1`, `airRaw`, `light1PowerW`, `fan1PowerW` là trường chính thức nhưng thuộc nhóm mở rộng.
+**Đã chốt:** làm cửa mô hình (servo SG90 + công tắc từ), MQ-135 và INA219 (2 cái: `0x40` cho quạt, `0x41` cho đèn). `door1`, `airRaw`, `light1PowerW`, `fan1PowerW` là trường chính thức nhưng thuộc nhóm mở rộng.
 
-**Đã chốt (v1.2):** cảm biến nhiệt-ẩm dùng **AHT20** (I2C, SDA 21 / SCL 22, địa chỉ 0x38, chung bus với BH1750). Không dùng DHT11.
+**Đã chốt (v1.2):** cảm biến nhiệt-ẩm dùng **AHT20** (I2C của Node A: SDA 21 / SCL 22, địa chỉ 0x38, chung bus với BH1750). Không dùng DHT11.
+
+**Đã chốt (v1.5):** Node B dùng I2C riêng ở **SDA 5 / SCL 19** cho 2 INA219; relay 1 kênh GPIO 26 (quạt, kích HIGH); LED đèn GPIO 27 (HIGH = sáng).
+
+**Bảng chân GPIO (v1.5)** – nguồn chuẩn là `firmware/node-a/config.h` và `firmware/node-b/config.h`; đổi chân thì sửa cả hai nơi.
+
+Node A – `office-env-01`:
+
+| Linh kiện | Chân ESP32 | Giao tiếp / ghi chú |
+| --- | --- | --- |
+| AHT20 (nhiệt-ẩm) | SDA 21, SCL 22 | I2C, địa chỉ `0x38` |
+| BH1750 (ánh sáng) | SDA 21, SCL 22 | I2C, địa chỉ `0x23`, chung bus AHT20 |
+| LD2410C (radar hiện diện) | RX 16 ← TX radar, TX 17 → RX radar | UART2, 256000 baud |
+| MQ-135 (không khí) | GPIO 34 | ADC1, chân AO qua cầu phân áp 20k/10k (5 V → ≤3,3 V) |
+| LED trạng thái | GPIO 2 | LED trên board: sáng = MQTT ok, nháy = đang kết nối |
+
+Node B – `office-ctrl-01`:
+
+| Linh kiện | Chân ESP32 | Giao tiếp / ghi chú |
+| --- | --- | --- |
+| INA219 #1 (quạt) | SDA 5, SCL 19 | I2C, địa chỉ `0x40` |
+| INA219 #2 (đèn) | SDA 5, SCL 19 | I2C, địa chỉ `0x41` (hàn A0) |
+| Relay 1 kênh → quạt `fan1` | GPIO 26 | Output, kích mức HIGH |
+| LED 5 mm `light1` | GPIO 27 | Output, HIGH = sáng |
+| Servo SG90 `door1` | GPIO 18 | PWM 50 Hz (LEDC); mở 90°, đóng 0° (đổi được qua config) |
+| Công tắc từ (reed) `door1` | GPIO 25 | `INPUT_PULLUP`; LOW = có nam châm = cửa đóng |
+| Còi thụ động `buzzer1` | GPIO 23 | PWM 2 kHz qua transistor 2N2222 |
+| LED trạng thái | GPIO 2 | LED trên board: sáng = MQTT ok, nháy = đang kết nối |
 
 ## 2. Quy ước chung
 
@@ -109,11 +145,11 @@ Tài liệu thống nhất giao diện kết nối giữa M1, M2, M3, M4. Mọi 
 
 | Field | Kiểu | Đơn vị | Nguồn | Bắt buộc |
 | --- | --- | --- | --- | --- |
-| `busVoltageV` | float | V | INA219 #1 | mở rộng |
-| `light1PowerW` | float | W | INA219 #1 (địa chỉ 0x40), tải đèn | mở rộng |
-| `light1CurrentMa` | int | mA | INA219 #1 | mở rộng |
-| `fan1PowerW` | float | W | INA219 #2 (địa chỉ 0x41), tải quạt | mở rộng |
-| `fan1CurrentMa` | int | mA | INA219 #2 | mở rộng |
+| `busVoltageV` | float | V | INA219 (giá trị lớn hơn của 2 kênh) | mở rộng |
+| `light1PowerW` | float | W | INA219 #2 (địa chỉ 0x41), tải đèn LED | mở rộng |
+| `light1CurrentMa` | int | mA | INA219 #2 (0x41) | mở rộng |
+| `fan1PowerW` | float | W | INA219 #1 (địa chỉ 0x40), tải quạt | mở rộng |
+| `fan1CurrentMa` | int | mA | INA219 #1 (0x40) | mở rộng |
 | `quality` | string | `VALID` / `SUSPECT` / `INVALID` | Thiết bị tự đánh giá (xem 5.5) | ✔ (mặc định `VALID` nếu thiếu khi INA219 chưa gắn) |
 | `rssi` | int | dBm | ESP32 | tùy chọn |
 
@@ -503,7 +539,7 @@ Field tối thiểu:
 - Device bị `LOCKED`/`DECOMMISSIONED` không gửi được dữ liệu.
 - 2 test bảo mật bắt buộc: (1) user không đủ quyền không điều khiển được thiết bị, (2) thiết bị bị decommission không gửi dữ liệu được.
 - Quyền riêng tư: chỉ thu dữ liệu môi trường và hiện diện; LD2410C là radar, không thu hình ảnh, âm thanh hay danh tính.
-- An toàn điện: chỉ dùng tải DC 12V; nguồn 12V và 5V tách riêng, chung GND; cầu chì trên đường 12V, diode chống xung song song quạt, tụ 1000µF cho servo; không đấu trực tiếp 220V.
+- An toàn điện: chỉ dùng tải DC điện áp thấp (hộp pin 3×AA ≈4,5 V cấp quạt mini, servo, relay; LED 5 mm từ GPIO); không đấu 220V. Nguồn pin tách khỏi nguồn 5V USB của ESP32, chung GND; LED nên có điện trở hạn dòng ~220 Ω; khuyến nghị diode song song quạt.
 
 ## 12. Phân công và ranh giới
 
@@ -533,8 +569,8 @@ Field tối thiểu:
 - [x] Chốt response JSON, phân trang, mã lỗi REST → **có** (mục 8.1–8.3)
 - [x] Chốt cấu trúc `Rule` và 5 rule mặc định → **có** (mục 9.1)
 - [x] Chốt ngoại lệ NFR-02 cho `door1` → ACK < 5 giây, timeout 10 giây (mục 5.3, 6)
-- [ ] Xác nhận linh kiện giả định đã có: đèn 12V, nguồn 12V/5V, cầu chì, diode, tụ 1000µF
-- [ ] Hàn bridge chân A0 trên INA219 #2 để đổi địa chỉ sang 0x41
+- [x] Chốt linh kiện tải → **LED 5 mm + quạt mini chạy pin 3×AA**, không dùng 12V (v1.5)
+- [x] Hàn bridge chân A0 trên INA219 #2 để đổi địa chỉ sang 0x41 (đã nhận 0x40 và 0x41 trên bus)
 - [ ] Chốt có dùng LCD không, loại LCD và gắn vào node nào
 - [x] Chốt vai trò M2/M3 theo bảng mục 12 (M2 firmware Node B, M3 backend) — đã thống nhất v1.3
 - [ ] Chốt giữ hay bỏ `PROVISIONED`, `FAULT` (đề xuất giữ; `SENSOR_FAULT` đã chốt)
