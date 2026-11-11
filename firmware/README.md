@@ -46,3 +46,35 @@ Simulator Node B: [`../tests/simulator/node_b_simulator.py`](../tests/simulator/
 Mock Node A+B: [`../tests/mqtt/mock_publisher.py`](../tests/mqtt/mock_publisher.py).
 
 Phần cứng/chân GPIO: [`../hardware/README.md`](../hardware/README.md).
+
+## Còi buzzer1 (BEEP/ALARM)
+
+Module `node-b/buzzer.h` + `buzzer.cpp` dùng `PIN_BUZZER` và các macro `BUZZER_*` trong `node-b/config.h`.
+Không thêm linh kiện; dùng còi hiện có qua transistor 2N2222.
+
+Trong `setup()`:
+
+```cpp
+#include "buzzer.h"
+buzzerInit();
+```
+
+Trong `loop()`:
+
+```cpp
+buzzerUpdate();
+```
+
+Khi nhận command `target == "buzzer1"`:
+
+```cpp
+if (action == "ON") buzzerOn();
+else if (action == "OFF") buzzerOff();
+else if (action == "BEEP") buzzerBeep(1);
+else if (action == "BEEP2") buzzerBeep(2);
+else if (action == "BEEP_LONG") buzzerBeepLong();
+else if (action == "ALARM") buzzerAlarm();
+```
+
+ACK trả `state = buzzerState()`; status định kỳ cũng dùng `buzzerState()`.
+Còi thụ động dùng tone 2 kHz; còi chủ động đặt `BUZZER_PASSIVE 0` trong `config.h`.

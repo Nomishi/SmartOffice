@@ -95,7 +95,7 @@ Event trả về định dạng JSON camelCase: `{"type":"...", "data":{...}, "t
 - `GET /api/devices/{id}/status`: Trạng thái tức thời, actuators, telemetry mới nhất.
 - `GET /api/devices/{id}/telemetry?from=...&to=...&page=0&size=20`: Lịch sử đo (tối đa 7 ngày, size mặc định 20).
 - `GET /api/devices/{id}/energy?from=...&to=...&bucket=hour`: Điện năng tiêu thụ (`bucket`: `raw`, `minute`, `hour`, `day`).
-- `POST /api/devices/{id}/commands`: Gửi lệnh điều khiển (`light1`, `fan1`, `buzzer1` nhận `ON`/`OFF`; `door1` nhận `OPEN`/`CLOSE`).
+- `POST /api/devices/{id}/commands`: Gửi lệnh điều khiển (`light1`, `fan1` nhận `ON`/`OFF`; `buzzer1` nhận `ON`/`OFF`/`BEEP`/`BEEP2`/`BEEP_LONG`/`ALARM`; `door1` nhận `OPEN`/`CLOSE`).
   - Hỗ trợ header `Idempotency-Key: <UUID>`.
   - Mặc định trả `202 Accepted`. Truyền `?wait=true` để chờ kết quả tối đa 10s.
   - Phân quyền: `ADMIN`, `OPERATOR`.

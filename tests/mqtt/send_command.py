@@ -17,13 +17,15 @@ import uuid
 
 from mqtt_common import dumps, is_failure, load_users, new_client, topic
 
-PAIRS = {"light1": ("ON", "OFF"), "fan1": ("ON", "OFF"), "buzzer1": ("ON", "OFF"), "door1": ("OPEN", "CLOSE")}
+PAIRS = {"light1": ("ON", "OFF"), "fan1": ("ON", "OFF"),
+         "buzzer1": ("ON", "OFF", "BEEP", "BEEP2", "BEEP_LONG", "ALARM"),
+         "door1": ("OPEN", "CLOSE")}
 
 
 def main():
     ap = argparse.ArgumentParser(description="Gửi lệnh điều khiển (vai trò backend) và chờ ACK")
     ap.add_argument("target", choices=list(PAIRS))
-    ap.add_argument("action", choices=["ON", "OFF", "OPEN", "CLOSE"])
+    ap.add_argument("action", choices=sorted({a for v in PAIRS.values() for a in v}))
     ap.add_argument("--device", default="office-ctrl-01")
     ap.add_argument("--command-id", default=None, help="mặc định: tự sinh")
     ap.add_argument("--host", default=os.environ.get("MQTT_HOST", "localhost"))

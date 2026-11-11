@@ -137,7 +137,7 @@ public class MockDeviceAgent {
         switch (target) {
             case "light1" -> light1 = action;
             case "fan1" -> fan1 = action;
-            case "buzzer1" -> buzzer1 = action;
+            case "buzzer1" -> buzzer1 = "OFF".equals(action) ? "OFF" : "ON";
             case "door1" -> door1 = "OPEN".equals(action) ? "OPEN" : "CLOSED";
             default -> { }
         }

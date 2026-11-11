@@ -29,7 +29,10 @@ public class CommandService {
 
     private static final Logger log = LoggerFactory.getLogger(CommandService.class);
 
-    private static final Set<String> RELAY_TARGETS = Set.of("light1", "fan1", "buzzer1");
+    private static final Set<String> SWITCH_TARGETS = Set.of("light1", "fan1");
+    private static final Set<String> BUZZER_TARGETS = Set.of("buzzer1");
+    private static final Set<String> BUZZER_ACTIONS =
+            Set.of("ON", "OFF", "BEEP", "BEEP2", "BEEP_LONG", "ALARM");
     private static final Set<String> DOOR_TARGETS = Set.of("door1");
 
     private final CommandRepository commandRepository;
@@ -104,10 +107,15 @@ public class CommandService {
     }
 
     private void validateTargetAction(String target, String action) {
-        if (RELAY_TARGETS.contains(target)) {
+        if (SWITCH_TARGETS.contains(target)) {
             if (!Set.of("ON", "OFF").contains(action)) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR",
                         target + " chỉ nhận action ON/OFF");
+            }
+        } else if (BUZZER_TARGETS.contains(target)) {
+            if (!BUZZER_ACTIONS.contains(action)) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR",
+                        "buzzer1 chỉ nhận ON/OFF/BEEP/BEEP2/BEEP_LONG/ALARM");
             }
         } else if (DOOR_TARGETS.contains(target)) {
             if (!Set.of("OPEN", "CLOSE").contains(action)) {

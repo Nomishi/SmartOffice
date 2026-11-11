@@ -99,7 +99,7 @@ Command backend gửi xuống:
 {"commandId":"CMD-0001","target":"light1","action":"ON","issuedBy":"user-2"}
 ```
 
-`target`: `light1|fan1|buzzer1|door1`; `action`: `ON|OFF` (door: `OPEN|CLOSE`).
+`target`: `light1|fan1|buzzer1|door1`; `action`: `ON|OFF` (door: `OPEN|CLOSE`; buzzer hỗ trợ thêm `BEEP|BEEP2|BEEP_LONG|ALARM`).
 
 ## 4. Test bằng MQTTX / mosquitto_pub
 

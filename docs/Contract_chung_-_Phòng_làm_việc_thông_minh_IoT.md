@@ -178,7 +178,7 @@ LWT (broker tự gửi khi mất kết nối): `{"online":false}`. Node A cũng 
 ### 5.3 Command và ACK
 
 - `target`: `light1`, `fan1`, `buzzer1`, `door1`
-- `action`: `ON`, `OFF` (cửa: `OPEN`, `CLOSE`)
+- `action`: `ON`, `OFF` (cửa: `OPEN`, `CLOSE`); riêng `buzzer1` hỗ trợ thêm `BEEP`, `BEEP2`, `BEEP_LONG`, `ALARM`
 - `issuedBy`: `user-<id>` hoặc `automation`
 
 ```json
@@ -236,6 +236,8 @@ Quy tắc bắt buộc:
 - Bản tin `quality = INVALID` bị loại khỏi luồng rule/automation; `SUSPECT` chỉ lưu và hiển thị (xem 5.5).
 - Khi cảm biến lỗi hoặc không có dữ liệu hiện diện, automation **không** coi là phòng trống.
 - Khởi động: relay ở trạng thái `OFF`, servo ở vị trí đóng, buzzer `OFF`, cho đến khi nhận lệnh.
+- Còi tự động: backend gửi `buzzer1 ALARM` khi có alert mới thuộc `TEMP_HIGH`, `AIR_BAD`, `DOOR_LEFT_OPEN`, `ENERGY_WASTE`; cooldown `BUZZER_COOLDOWN_SECONDS` (mặc định 60), tắt bằng `BUZZER_AUTO_ALERT_ENABLED=false`.
+
 
 ## 7. Enum
 

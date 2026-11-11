@@ -60,6 +60,16 @@ describe('điều khiển và lệnh', () => {
     expect((st.body as { actuators: { light1: string } }).actuators.light1).toBe('ON');
   });
 
+  it('còi nhận các chế độ BEEP/ALARM thay vì chỉ ON/OFF', async () => {
+    const r = await call(OPERATOR, 'POST', '/api/devices/office-ctrl-01/commands', { target: 'buzzer1', action: 'BEEP' });
+    expect(r.status).toBe(202);
+    expect(r.body).toMatchObject({ target: 'buzzer1', action: 'BEEP', status: 'PENDING' });
+    await wait(900);
+    const list = await call(OPERATOR, 'GET', '/api/devices/office-ctrl-01/commands');
+    const items = (list.body as { items: { commandId: string; status: string }[] }).items;
+    expect(items.find((c) => c.commandId === (r.body as { commandId: string }).commandId)?.status).toBe('SUCCESS');
+  });
+
   it('Idempotency-Key: cùng key + cùng body trả lại đúng lệnh cũ, khác body thì 409 COMMAND_DUPLICATE', async () => {
     const a = await call(OPERATOR, 'POST', '/api/devices/office-ctrl-01/commands', { target: 'fan1', action: 'ON' }, {}, { 'Idempotency-Key': 'k-2' });
     const b = await call(OPERATOR, 'POST', '/api/devices/office-ctrl-01/commands', { target: 'fan1', action: 'ON' }, {}, { 'Idempotency-Key': 'k-2' });

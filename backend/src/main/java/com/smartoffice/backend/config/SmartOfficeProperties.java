@@ -14,6 +14,16 @@ public class SmartOfficeProperties {
     private Cors cors = new Cors();
     private Security security = new Security();
     private Ai ai = new Ai();
+    private Buzzer buzzer = new Buzzer();
+
+    @Getter
+    @Setter
+    public static class Buzzer {
+        /** Tự kích còi khi có alert TEMP_HIGH/AIR_BAD/DOOR_LEFT_OPEN/ENERGY_WASTE. */
+        private boolean autoAlertEnabled = true;
+        /** Không kích lại cùng một thiết bị trong khoảng này. */
+        private long cooldownSeconds = 60;
+    }
 
     @Getter
     @Setter

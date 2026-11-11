@@ -227,7 +227,10 @@ class NodeB(Node):
     def handle_command(self, cmd):
         cid, target, action = cmd.get("commandId"), cmd.get("target"), cmd.get("action")
         valid = (target == "door1" and action in ("OPEN", "CLOSE")) or (
-            target in ("light1", "fan1", "buzzer1") and action in ("ON", "OFF")
+            target in ("light1", "fan1") and action in ("ON", "OFF")
+        ) or (
+            target == "buzzer1"
+            and action in ("ON", "OFF", "BEEP", "BEEP2", "BEEP_LONG", "ALARM")
         )
         if not cid or not valid:
             log(self.device_id, f"lệnh không hợp lệ, bỏ qua: {cmd}")
@@ -249,6 +252,9 @@ class NodeB(Node):
                 # --fail-door mô phỏng công tắc từ không khớp lệnh -> ACK FAILED
                 new_state = self.state["door1"] if self.args.fail_door else wanted
                 status = "SUCCESS" if new_state == wanted else "FAILED"
+            elif target == "buzzer1":
+                new_state = "OFF" if action == "OFF" else "ON"
+                status = "SUCCESS"
             else:
                 new_state, status = action, "SUCCESS"
             self.state[target] = new_state

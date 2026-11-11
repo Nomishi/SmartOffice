@@ -7,6 +7,7 @@ import com.smartoffice.backend.realtime.RealtimeService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -27,6 +28,7 @@ public class AlertService {
 
     private final AlertRepository alertRepository;
     private final RealtimeService realtimeService;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Mỗi (type, deviceId) chỉ có tối đa 1 alert đang mở để tránh spam mỗi 5 giây.
@@ -56,6 +58,7 @@ public class AlertService {
                     log.info("Tạo cảnh báo {} cho {}: {}", type, deviceId, message);
                     Alert saved = alertRepository.save(alert);
                     realtimeService.broadcast("alert", saved);
+                    eventPublisher.publishEvent(new AlertRaisedEvent(saved));
                     return saved;
                 });
     }

@@ -84,6 +84,8 @@ services:
       AI_API_KEY: ${AI_API_KEY:-}
       AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
       AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-20000}
+      BUZZER_AUTO_ALERT_ENABLED: ${BUZZER_AUTO_ALERT_ENABLED:-true}
+      BUZZER_COOLDOWN_SECONDS: ${BUZZER_COOLDOWN_SECONDS:-60}
     ports:
       - "8080:8080" # dev: Swagger/API trực tiếp
     depends_on:

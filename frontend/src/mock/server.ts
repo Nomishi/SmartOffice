@@ -168,7 +168,14 @@ function applyPower(d: DeviceState) {
 
 function finishCommand(cmd: Command, d: DeviceState, startedAt: number) {
   if (!d.actuators) return;
-  const state = cmd.target === 'door1' ? (cmd.action === 'OPEN' ? 'OPEN' : 'CLOSED') : cmd.action;
+  const isDoor = cmd.target === 'door1';
+  const isBuzzerPattern = cmd.target === 'buzzer1'
+    && ['BEEP', 'BEEP2', 'BEEP_LONG', 'ALARM'].includes(cmd.action);
+  const state = isDoor
+    ? (cmd.action === 'OPEN' ? 'OPEN' : 'CLOSED')
+    : cmd.target === 'buzzer1'
+      ? (cmd.action === 'OFF' ? 'OFF' : 'ON')
+      : cmd.action;
   (d.actuators as unknown as Record<string, string>)[cmd.target] = state;
   applyPower(d);
   cmd.status = 'SUCCESS';
@@ -177,6 +184,19 @@ function finishCommand(cmd: Command, d: DeviceState, startedAt: number) {
   emit({ type: 'command', command: { ...cmd } });
   emit({ type: 'status', deviceId: d.deviceId, online: d.online, mode: d.mode, actuators: { ...d.actuators } });
   emit({ type: 'telemetry', deviceId: d.deviceId, data: { ...d.latest } });
+
+  // Còi tự tắt sau khi hết pattern; ALARM giữ tối đa 10 giây để test UI.
+  if (isBuzzerPattern && d.actuators) {
+    const offAfterMs = cmd.action === 'BEEP' ? 500
+      : cmd.action === 'BEEP2' ? 1200
+        : cmd.action === 'BEEP_LONG' ? 1500
+          : 10000;
+    setTimeout(() => {
+      if (!d.actuators) return;
+      d.actuators.buzzer1 = 'OFF';
+      emit({ type: 'status', deviceId: d.deviceId, online: d.online, mode: d.mode, actuators: { ...d.actuators } });
+    }, offAfterMs);
+  }
 }
 
 // ---------- Lịch sử giả (tính theo thời gian nên lần gọi nào cũng ra cùng kết quả) ----------
@@ -385,7 +405,11 @@ async function route(req: MockRequest): Promise<MockResponse> {
     const target = String(body.target) as CommandTarget;
     const action = String(body.action) as CommandAction;
     const okTarget = ['light1', 'fan1', 'buzzer1', 'door1'].includes(target);
-    const okAction = target === 'door1' ? ['OPEN', 'CLOSE'].includes(action) : ['ON', 'OFF'].includes(action);
+    const okAction = target === 'door1'
+      ? ['OPEN', 'CLOSE'].includes(action)
+      : target === 'buzzer1'
+        ? ['ON', 'OFF', 'BEEP', 'BEEP2', 'BEEP_LONG', 'ALARM'].includes(action)
+        : ['ON', 'OFF'].includes(action);
     if (!okTarget || !okAction || !d.actuators) {
       return fail(400, 'VALIDATION_ERROR', 'Lệnh không hợp lệ', { target, action });
     }

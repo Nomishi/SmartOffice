@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Card, Segmented, Switch, Table, Tag, Tooltip, Typography, message } from 'antd';
+import { Alert, Button, Card, Segmented, Space, Switch, Table, Tag, Tooltip, Typography, message } from 'antd';
 import type { TableProps } from 'antd';
 import { getCommands, getDeviceStatus, sendCommand, setMode } from '../api/endpoints';
 import { errMsg } from '../api/client';
@@ -80,7 +80,26 @@ export default function ControlCard({ deviceId }: { deviceId: string }) {
           <div className="ctrl-name">{a.label}</div>
           <div className="ctrl-sub">{a.target}</div>
         </div>
-        {w !== undefined && <div className="ctrl-watt">{w === '—' ? '—' : `${fmtVal(w, 1)} W`}</div>}
+        {w !== undefined && <div className="ctrl-watt">{w === '-' ? '-' : `${fmtVal(w, 1)} W`}</div>}
+        {a.target === 'buzzer1' && (
+          <Space size={4} style={{ marginRight: 8 }}>
+            <Button
+              size="small"
+              disabled={locked}
+              onClick={() => cmdMut.mutate({ target: 'buzzer1', action: 'BEEP' })}
+            >
+              Thử
+            </Button>
+            <Button
+              size="small"
+              danger
+              disabled={locked}
+              onClick={() => cmdMut.mutate({ target: 'buzzer1', action: 'ALARM' })}
+            >
+              Báo động
+            </Button>
+          </Space>
+        )}
         <Tooltip title={reason}>
           <span>
             <Switch

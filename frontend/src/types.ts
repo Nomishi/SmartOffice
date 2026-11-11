@@ -13,7 +13,7 @@ export type AlertType =
 export type Severity = 'LOW' | 'MEDIUM' | 'HIGH';
 export type AlertStatus = 'OPEN' | 'ACKNOWLEDGED';
 export type CommandTarget = 'light1' | 'fan1' | 'buzzer1' | 'door1';
-export type CommandAction = 'ON' | 'OFF' | 'OPEN' | 'CLOSE';
+export type CommandAction = 'ON' | 'OFF' | 'OPEN' | 'CLOSE' | 'BEEP' | 'BEEP2' | 'BEEP_LONG' | 'ALARM';
 
 export interface User {
   userId: number;

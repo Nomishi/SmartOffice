@@ -85,10 +85,15 @@ def publish_telemetry(client):
 
 
 def apply_command(target, action):
-    if target in ("light1", "fan1", "buzzer1"):
+    if target in ("light1", "fan1"):
         if action not in ("ON", "OFF"):
             return False
         state[target] = action
+        return True
+    if target == "buzzer1":
+        if action not in ("ON", "OFF", "BEEP", "BEEP2", "BEEP_LONG", "ALARM"):
+            return False
+        state["buzzer1"] = "OFF" if action == "OFF" else "ON"
         return True
     if target == "door1":
         if action not in ("OPEN", "CLOSE"):
