@@ -3,7 +3,7 @@
 Hệ thống giám sát môi trường và điều khiển thiết bị phòng làm việc:
 ESP32 gửi dữ liệu qua MQTT, backend Spring Boot lưu PostgreSQL và đẩy realtime lên web React.
 
-Contract chung: [`docs/Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](docs/Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md) v1.3.
+Contract chung: [`docs/Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](docs/Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md) v1.5.
 
 ## Cấu trúc repo
 
@@ -30,7 +30,7 @@ SmartOffice/
 | `deployment/` | Full stack Docker: Mosquitto ACL + PostgreSQL + backend + frontend |
 | `hardware/` | Danh sách linh kiện, GPIO, an toàn điện |
 | `tests/` | Simulator Node B, mock publisher Node A+B, test ACL |
-| `docs/` | Contract v1.3, setup, API, test checklist, báo cáo |
+| `docs/` | Contract v1.5, setup, API, test checklist, báo cáo |
 
 ## Kiến trúc
 
@@ -43,6 +43,8 @@ Node B (điều khiển)┘             │              │
 ```
 
 ## Chạy full stack
+
+> Hướng dẫn đầy đủ từ đầu: [`docs/CHAY_DU_AN.md`](docs/CHAY_DU_AN.md).
 
 Yêu cầu: Docker Desktop + Git.
 
@@ -140,8 +142,8 @@ Frontend chỉ gọi backend, không cầm API key. Chi tiết: [`docs/ai-api.md
 
 | Hạng mục | Trạng thái |
 | --- | --- |
-| Backend M3 | ✅ 31 test, auth/SSE/Flyway/Docker |
-| Frontend M4 | ✅ 49 test, build + Docker, có UI Trợ lý AI |
+| Backend M3 | ✅ 32 test, auth/SSE/Flyway/Docker |
+| Frontend M4 | ✅ 52 test, build + Docker, có UI Trợ lý AI |
 | Infra ACL/credential | ✅ |
 | Simulator M2 | ✅ command/ACK qua ACL |
 | AI API (tùy chọn) | ✅ `/api/ai/chat`, bật bằng env |
@@ -154,7 +156,7 @@ Frontend chỉ gọi backend, không cầm API key. Chi tiết: [`docs/ai-api.md
 | File | Nội dung |
 | --- | --- |
 | [`docs/SETUP.md`](docs/SETUP.md) | Setup từ đầu |
-| [`docs/Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](docs/Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md) | Contract v1.3 |
+| [`docs/Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](docs/Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md) | Contract v1.5 |
 | [`docs/m3-backend.md`](docs/m3-backend.md) | Backend M3 chi tiết |
 | [`docs/frontend-setup.md`](docs/frontend-setup.md) | Setup frontend |
 | [`docs/frontend-integration.md`](docs/frontend-integration.md) | API/SSE cho M4 |
