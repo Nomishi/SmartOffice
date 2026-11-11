@@ -45,3 +45,6 @@ docs/system-overview.md
 # Office temp files
 ~$*.docx
 ~$*.xlsx
+
+# Firmware: Wi-Fi / MQTT password của từng node (dùng secrets.example.h làm mẫu)
+firmware/**/secrets.h
