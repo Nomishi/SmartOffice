@@ -1,0 +1,17 @@
+{
+  "suite": "functional_lifecycle",
+  "startedAt": "2026-11-11T03:22:33Z",
+  "finishedAt": "2026-11-11T03:22:34Z",
+  "api": "http://localhost:3000/api",
+  "broker": "127.0.0.1:1883",
+  "results": [
+    {
+      "id": "CN-17",
+      "title": "Vòng đời thiết bị: đăng ký, kích hoạt, bảo trì, khóa/mở khóa, ngừng sử dụng",
+      "verdict": "PASS",
+      "expected": "Đúng luồng thì chuyển được; sai luồng 409 INVALID_TRANSITION; decommission không hoàn tác; Operator không được đăng ký",
+      "actual": "test-device-fd6a53: REGISTERED → activate:ACTIVE → maintenance:MAINTENANCE → activate:ACTIVE → decommission:409 INVALID_TRANSITION → lock:LOCKED → activate:ACTIVE → lock:LOCKED → decommission:DECOMMISSIONED → activate:409 INVALID_TRANSITION; Operator đăng ký → 403",
+      "note": "thiết bị thử để lại ở trạng thái DECOMMISSIONED"
+    }
+  ]
+}

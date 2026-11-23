@@ -1,0 +1,26 @@
+{
+  "suite": "nonfunctional_loss",
+  "startedAt": "2026-11-10T23:05:16Z",
+  "finishedAt": "2026-11-10T23:10:17Z",
+  "api": "http://localhost:3000/api",
+  "broker": "127.0.0.1:1883",
+  "results": [
+    {
+      "id": "PCN-03",
+      "title": "Tỷ lệ mất bản tin (NFR-03)",
+      "verdict": "PASS",
+      "expected": "< 1 %",
+      "actual": "0.00 % trong 5.0 phút; office-env-01: nhận 60/60 (mất 0, trùng 0); office-ctrl-01: nhận 59/59 (mất 0, trùng 0)",
+      "note": ""
+    }
+  ],
+  "measurements": {
+    "PCN-03": {
+      "minutes": 5.0,
+      "expected": 119,
+      "received": 119,
+      "lossPercent": 0.0,
+      "deviceRestarts": 0
+    }
+  }
+}

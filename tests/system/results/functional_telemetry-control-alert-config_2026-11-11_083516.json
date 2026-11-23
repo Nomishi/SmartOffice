@@ -1,0 +1,65 @@
+{
+  "suite": "functional_telemetry-control-alert-config",
+  "startedAt": "2026-11-11T01:35:16Z",
+  "finishedAt": "2026-11-11T01:36:45Z",
+  "api": "http://localhost:3000/api",
+  "broker": "127.0.0.1:1883",
+  "results": [
+    {
+      "id": "CN-03",
+      "title": "Telemetry Node A",
+      "verdict": "PASS",
+      "expected": "Lưu DB, có quality, dashboard đọc được qua API",
+      "actual": "seq 27, quality SUSPECT, temperature=23.58, humidity=78.35, lux=41.67, presence=True, airRaw=1415; API receivedAt 2026-11-11T01:35:20.854942Z",
+      "note": ""
+    },
+    {
+      "id": "CN-04",
+      "title": "Telemetry Node B",
+      "verdict": "PASS",
+      "expected": "Lưu DB, có quality, dashboard đọc được qua API",
+      "actual": "seq 7, quality VALID, busVoltageV=4.41, light1PowerW=0, fan1PowerW=0; API receivedAt 2026-11-11T01:35:25.803049Z",
+      "note": ""
+    },
+    {
+      "id": "CN-03b",
+      "title": "Tra cứu lịch sử + báo cáo năng lượng",
+      "verdict": "PASS",
+      "expected": "API lịch sử 10 phút trả dữ liệu; API năng lượng trả 200",
+      "actual": "lịch sử 200 (32 bản ghi/trang), năng lượng 200",
+      "note": ""
+    },
+    {
+      "id": "CN-05",
+      "title": "Điều khiển đèn / quạt / còi",
+      "verdict": "PASS",
+      "expected": "ACK SUCCESS, trạng thái actuator đổi đúng",
+      "actual": "light1 ON: SUCCESS, thiết bị 2 ms, khứ hồi 1533 ms, light1CurrentMa=29; light1 OFF: SUCCESS, thiết bị 2 ms, khứ hồi 169 ms; fan1 ON: SUCCESS, thiết bị 2 ms, khứ hồi 168 ms, fan1CurrentMa=579; fan1 OFF: SUCCESS, thiết bị 2 ms, khứ hồi 167 ms; buzzer1 ON: SUCCESS, thiết bị 2 ms, khứ hồi 168 ms; buzzer1 OFF: SUCCESS, thiết bị 2 ms, khứ hồi 171 ms",
+      "note": ""
+    },
+    {
+      "id": "CN-06",
+      "title": "Điều khiển cửa (servo + công tắc từ)",
+      "verdict": "FAIL",
+      "expected": "OPEN/CLOSE đều SUCCESS, trạng thái cửa theo công tắc từ, < 5 s",
+      "actual": "OPEN → FAILED (2533 ms); CLOSE → SUCCESS (702 ms); trạng thái cuối CLOSED",
+      "note": "lệnh FAILED khi công tắc từ không xác nhận là đúng thiết kế; cần chỉnh nam châm"
+    },
+    {
+      "id": "CN-07",
+      "title": "Sinh và xử lý cảnh báo TEMP_HIGH",
+      "verdict": "PASS",
+      "expected": "Hạ ngưỡng dưới nhiệt độ thật → alert OPEN; Operator xác nhận được; trả ngưỡng → alert đóng",
+      "actual": "nhiệt độ 23.56 °C, ngưỡng thử 21 °C → alert sau 16 s, xác nhận HTTP 200, tự đóng sau 6 s khi trả ngưỡng 30 °C",
+      "note": ""
+    },
+    {
+      "id": "CN-13",
+      "title": "Thay đổi cấu hình thiết bị từ xa",
+      "verdict": "PASS",
+      "expected": "Config hợp lệ → ACK SUCCESS và áp dụng; sai dải → API 400, thiết bị FAILED",
+      "actual": "PUT chu kỳ 7 s → CFG-0014 ACK SUCCESS; khoảng cách telemetry sau đổi: [7.1, 7.0, 7.1] s (trung vị 7.1 s); API giá trị sai 99999 → 400 VALIDATION_ERROR; gửi thẳng góc servo 999 → thiết bị trả FAILED",
+      "note": ""
+    }
+  ]
+}

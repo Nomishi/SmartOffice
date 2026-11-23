@@ -4,7 +4,7 @@ Hướng dẫn test Node A (M1), Node B (M2) với broker + backend + frontend.
 
 ## 0. Repo có gì?
 
-- `firmware/` — firmware Node B; simulator ở `tests/simulator/node_b_simulator.py`.
+- `firmware/` — firmware Node A và Node B.
 - Backend M3: `backend/`.
 - Frontend M4: `frontend/`.
 - Hạ tầng full stack: `deployment/` (Mosquitto ACL + PostgreSQL + backend + frontend).
@@ -172,20 +172,7 @@ Invoke-RestMethod "http://localhost:3000/api/devices/office-ctrl-01/commands" -H
 
 Kỳ vọng: `SUCCESS`, status actuator đổi.
 
-## 7. Chạy simulator Node B có sẵn
-
-```powershell
-$env:MQTT_HOST = "192.168.10.205"
-$env:MQTT_PORT = "1883"
-$env:MQTT_USERNAME = "office-ctrl-01"
-$env:MQTT_PASSWORD = "mat-khau-ctrl01"
-$env:PYTHONIOENCODING = "utf-8"
-python tests/simulator/node_b_simulator.py
-```
-
-Simulator publish status retained, telemetry 5s, heartbeat 30s; nhận command và trả ACK.
-
-## 8. Test offline / LWT
+## 7. Test offline / LWT
 
 - **LWT:** cấu hình Will topic `office/office-ctrl-01/status`, retained, payload `{"online":false}`.
   Mất kết nối → broker gửi LWT → backend tạo alert `DEVICE_OFFLINE` ngay.

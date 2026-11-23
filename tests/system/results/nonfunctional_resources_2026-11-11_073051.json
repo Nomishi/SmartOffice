@@ -1,0 +1,43 @@
+{
+  "suite": "nonfunctional_resources",
+  "startedAt": "2026-11-11T00:30:51Z",
+  "finishedAt": "2026-11-11T00:30:54Z",
+  "api": "http://localhost:3000/api",
+  "broker": "127.0.0.1:1883",
+  "results": [
+    {
+      "id": "PCN-06",
+      "title": "Mức dùng tài nguyên",
+      "verdict": "PASS",
+      "expected": "Ghi nhận CPU / RAM",
+      "actual": "iot-frontend: CPU 0.00%, RAM 16.03MiB; iot-backend: CPU 2.64%, RAM 433.6MiB; iot-postgres: CPU 0.09%, RAM 44.02MiB; iot-mosquitto: CPU 0.07%, RAM 4.223MiB",
+      "note": "RAM ESP32: firmware dùng 15–17 % RAM tĩnh (theo trình biên dịch)"
+    }
+  ],
+  "measurements": {
+    "PCN-06": {
+      "docker": [
+        [
+          "iot-frontend",
+          "0.00%",
+          "16.03MiB / 7.681GiB"
+        ],
+        [
+          "iot-backend",
+          "2.64%",
+          "433.6MiB / 7.681GiB"
+        ],
+        [
+          "iot-postgres",
+          "0.09%",
+          "44.02MiB / 7.681GiB"
+        ],
+        [
+          "iot-mosquitto",
+          "0.07%",
+          "4.223MiB / 7.681GiB"
+        ]
+      ]
+    }
+  }
+}
