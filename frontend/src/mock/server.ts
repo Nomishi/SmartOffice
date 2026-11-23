@@ -79,6 +79,8 @@ const rules: Rule[] = [
 ];
 
 let cfgSeq = 0;
+// Cấu hình đang áp dụng trên từng thiết bị giả (cập nhật khi config được "ACK")
+const appliedConfig: Record<string, { telemetryIntervalSec: number; servoOpenDeg?: number; servoCloseDeg?: number; lastConfigId: string | null; lastAckAt: string | null }> = {};
 const pendingConfig = new Set<string>();
 
 // Các trạng thái được phép chuyển (UI chỉ hiện nút hợp lệ; đây là giả định, cần M3 xác nhận)
@@ -596,6 +598,25 @@ async function route(req: MockRequest): Promise<MockResponse> {
 
   // ---- Cấu hình tham số thiết bị ----
   m = /^\/api\/devices\/([^/]+)\/config$/.exec(path);
+  if (m && method === 'GET') {
+    const d = devices[m[1]];
+    if (!d) return fail(404, 'NOT_FOUND', 'Không tìm thấy thiết bị');
+    const control = d.type === 'CONTROL';
+    const a = appliedConfig[d.deviceId];
+    return {
+      status: 200,
+      body: {
+        deviceId: d.deviceId,
+        telemetryIntervalSec: a?.telemetryIntervalSec ?? 5,
+        servoOpenDeg: control ? (a?.servoOpenDeg ?? 90) : null,
+        servoCloseDeg: control ? (a?.servoCloseDeg ?? 0) : null,
+        source: a ? 'ACKED' : 'DEFAULT',
+        lastConfigId: a?.lastConfigId ?? null,
+        lastAckAt: a?.lastAckAt ?? null,
+        pendingConfigId: pendingConfig.has(d.deviceId) ? `CFG-${String(cfgSeq).padStart(4, '0')}` : null,
+      },
+    };
+  }
   if (m && method === 'PUT') {
     if (!canWrite) return forbidden();
     const d = devices[m[1]];
@@ -620,6 +641,14 @@ async function route(req: MockRequest): Promise<MockResponse> {
     pendingConfig.add(d.deviceId);
     setTimeout(() => {
       pendingConfig.delete(d.deviceId);
+      const prev = appliedConfig[d.deviceId];
+      appliedConfig[d.deviceId] = {
+        telemetryIntervalSec: (body.telemetryIntervalSec as number | undefined) ?? prev?.telemetryIntervalSec ?? 5,
+        servoOpenDeg: (body.servoOpenDeg as number | undefined) ?? prev?.servoOpenDeg ?? 90,
+        servoCloseDeg: (body.servoCloseDeg as number | undefined) ?? prev?.servoCloseDeg ?? 0,
+        lastConfigId: res.configId,
+        lastAckAt: now(),
+      };
       emit({ type: 'config', deviceId: d.deviceId, configId: res.configId, status: 'SUCCESS' });
     }, 1200);
     return { status: 200, body: res };

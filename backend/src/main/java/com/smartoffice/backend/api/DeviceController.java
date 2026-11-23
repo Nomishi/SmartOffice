@@ -143,6 +143,11 @@ public class DeviceController {
                 "updatedAt", device.getUpdatedAt());
     }
 
+    @GetMapping("/{id}/config")
+    public CurrentConfigDto currentConfig(@PathVariable String id) {
+        return configService.current(id);
+    }
+
     @PutMapping("/{id}/config")
     @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     public ConfigDto sendConfig(@PathVariable String id,

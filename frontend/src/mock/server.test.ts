@@ -139,6 +139,19 @@ describe('cấu hình thiết bị', () => {
     expect(err(again).code).toBe('CONFIG_CONFLICT');
     await wait(1400); // chờ mock phát xong ACK để không ảnh hưởng test khác
   });
+
+  it('GET trả cấu hình đang áp dụng: mặc định khi chưa cấu hình, giá trị mới sau khi thiết bị xác nhận', async () => {
+    const ctrl = await call(VIEWER, 'GET', '/api/devices/office-ctrl-01/config');
+    expect(ctrl.status).toBe(200);
+    expect(ctrl.body).toMatchObject({ telemetryIntervalSec: 5, servoOpenDeg: 90, servoCloseDeg: 0, source: 'DEFAULT' });
+
+    await call(OPERATOR, 'PUT', '/api/devices/office-ctrl-01/config', { telemetryIntervalSec: 7, servoOpenDeg: 80, servoCloseDeg: 0 });
+    expect((await call(VIEWER, 'GET', '/api/devices/office-ctrl-01/config')).body).toMatchObject({ pendingConfigId: expect.any(String) });
+    await wait(1400);
+    const after = await call(VIEWER, 'GET', '/api/devices/office-ctrl-01/config');
+    expect(after.body).toMatchObject({ telemetryIntervalSec: 7, servoOpenDeg: 80, source: 'ACKED', pendingConfigId: null });
+    expect((await call(VIEWER, 'GET', '/api/devices/khong-co/config')).status).toBe(404);
+  });
 });
 
 describe('rule và ngưỡng', () => {

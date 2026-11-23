@@ -122,6 +122,17 @@ export interface DeviceConfigInput {
   servoOpenDeg?: number;
   servoCloseDeg?: number;
 }
+// GET /api/devices/{id}/config: cấu hình đang áp dụng (gộp các config thiết bị đã ACK SUCCESS)
+export interface CurrentConfig {
+  deviceId: string;
+  telemetryIntervalSec: number;
+  servoOpenDeg?: number | null;   // chỉ có ở node CONTROL
+  servoCloseDeg?: number | null;
+  source: 'ACKED' | 'DEFAULT';     // DEFAULT: chưa từng cấu hình, đang chạy giá trị mặc định của firmware
+  lastConfigId: string | null;
+  lastAckAt: string | null;
+  pendingConfigId: string | null;
+}
 export interface ConfigResult {
   configId: string;
   deviceId: string;
