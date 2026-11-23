@@ -1,6 +1,6 @@
 import { request } from './client';
 import type {
-  Alert, AlertStatus, AuditLog, Command, CommandAction, CommandTarget, ConfigResult, CreateUserInput, Device,
+  Alert, AlertStatus, AuditLog, Command, CommandAction, CommandTarget, ConfigResult, CreateUserInput, CurrentConfig, Device,
   DeviceConfigInput, DeviceStatusDetail, RegisterDeviceInput, Rule, RulePatch, EnergyBucketSize, EnergyResponse, LatestTelemetry, LoginResponse, Mode, Page, User, AiChatResponse, AiChatHistoryItem,
 } from '../types';
 
@@ -63,6 +63,7 @@ export const lockDevice = (id: string) => request<Device>('POST', `/api/devices/
 export const decommissionDevice = (id: string) => request<Device>('POST', `/api/devices/${id}/decommission`);
 
 // Cấu hình tham số thiết bị (Admin/Operator). Kết quả ACK (SUCCESS/FAILED/TIMEOUT) đến qua realtime.
+export const getDeviceConfig = (id: string) => request<CurrentConfig>('GET', `/api/devices/${id}/config`);
 export const updateDeviceConfig = (id: string, body: DeviceConfigInput) =>
   request<ConfigResult>('PUT', `/api/devices/${id}/config`, { body });
 
