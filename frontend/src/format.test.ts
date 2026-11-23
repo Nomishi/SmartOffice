@@ -39,7 +39,7 @@ describe('bảng nhãn và tham số rule', () => {
   });
 
   it('mọi hành động ghi nhật ký của mock đều có nhãn tiếng Việt', () => {
-    expect(Object.keys(AUDIT_ACTION_LABEL)).toHaveLength(15);
+    expect(Object.keys(AUDIT_ACTION_LABEL)).toHaveLength(16);
     expect(AUDIT_ACTION_LABEL.LOCK_DEVICE).toBe('Khóa thiết bị');
   });
 });

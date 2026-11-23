@@ -4,6 +4,7 @@ import com.smartoffice.backend.config.SmartOfficeProperties;
 import com.smartoffice.backend.domain.Device;
 import com.smartoffice.backend.domain.Quality;
 import com.smartoffice.backend.repository.DeviceRepository;
+import com.smartoffice.backend.service.AuditService;
 import com.smartoffice.backend.service.DeviceService;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +16,7 @@ import static org.mockito.Mockito.mock;
 class DeviceServiceTest {
 
     private final DeviceService service = new DeviceService(mock(DeviceRepository.class),
-            new SmartOfficeProperties());
+            new SmartOfficeProperties(), mock(AuditService.class));
 
     @Test
     void suspectBreaksBothStreaks() {

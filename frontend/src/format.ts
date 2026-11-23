@@ -70,6 +70,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   ACK_ALERT: 'Xác nhận cảnh báo',
   REGISTER_DEVICE: 'Đăng ký thiết bị',
   ACTIVATE_DEVICE: 'Kích hoạt thiết bị',
+  MAINTENANCE_DEVICE: 'Chuyển thiết bị sang bảo trì',
   LOCK_DEVICE: 'Khóa thiết bị',
   DECOMMISSION_DEVICE: 'Decommission thiết bị',
   UPDATE_CONFIG: 'Cấu hình thiết bị',

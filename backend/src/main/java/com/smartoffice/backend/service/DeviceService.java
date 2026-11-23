@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +25,24 @@ public class DeviceService {
 
     private final DeviceRepository deviceRepository;
     private final SmartOfficeProperties properties;
+    private final AuditService auditService;
+
+    /**
+     * Vòng đời do Admin điều khiển (Contract mục 7): trạng thái đích -> các trạng thái được phép đi tới nó.
+     * OFFLINE / FAULT do hệ thống tự đặt nên không có trong bảng này.
+     * - ACTIVE: kích hoạt lần đầu, xong bảo trì, hoặc mở khóa.
+     * - MAINTENANCE: tạm ngừng để bảo trì (không nhận lệnh, không bị đánh OFFLINE).
+     * - LOCKED: khóa thiết bị đang dùng.
+     * - DECOMMISSIONED: không hoàn tác; chỉ từ LOCKED, hoặc thiết bị đăng ký nhưng chưa từng dùng.
+     */
+    private static final Map<DeviceStatus, Set<DeviceStatus>> ALLOWED_FROM = Map.of(
+            DeviceStatus.ACTIVE, EnumSet.of(DeviceStatus.REGISTERED, DeviceStatus.PROVISIONED,
+                    DeviceStatus.MAINTENANCE, DeviceStatus.LOCKED),
+            DeviceStatus.MAINTENANCE, EnumSet.of(DeviceStatus.ACTIVE, DeviceStatus.OFFLINE, DeviceStatus.FAULT),
+            DeviceStatus.LOCKED, EnumSet.of(DeviceStatus.ACTIVE, DeviceStatus.OFFLINE, DeviceStatus.FAULT,
+                    DeviceStatus.MAINTENANCE),
+            DeviceStatus.DECOMMISSIONED, EnumSet.of(DeviceStatus.LOCKED, DeviceStatus.REGISTERED,
+                    DeviceStatus.PROVISIONED));
 
     public org.springframework.data.domain.Page<Device> list(
             org.springframework.data.domain.Pageable pageable) {
@@ -61,6 +82,39 @@ public class DeviceService {
      * Thiết bị phải được đăng ký trước (contract mục 11). Flag auto-register chỉ dùng cho
      * giai đoạn mock/dev để M1/M3 chạy song song không cần M2.
      */
+    /** Đổi trạng thái vòng đời theo yêu cầu của Admin. Sai luồng -> 409 INVALID_TRANSITION. */
+    @Transactional
+    public Device changeStatus(String deviceId, DeviceStatus target, String issuedBy) {
+        Device device = getRequired(deviceId);
+        DeviceStatus from = device.getStatus();
+        if (from == target) {
+            return device; // gọi lặp: không đổi gì
+        }
+        Set<DeviceStatus> allowed = ALLOWED_FROM.get(target);
+        if (allowed == null || !allowed.contains(from)) {
+            auditService.log(issuedBy, auditAction(target), deviceId, "REJECTED");
+            throw new ApiException(HttpStatus.CONFLICT, "INVALID_TRANSITION",
+                    "Không thể chuyển thiết bị " + deviceId + " từ " + from + " sang " + target);
+        }
+        device.setStatus(target);
+        device.setUpdatedAt(Instant.now());
+        deviceRepository.save(device);
+        auditService.log(issuedBy, auditAction(target), deviceId, from + " -> " + target);
+        log.info("Thiết bị {}: {} -> {} (bởi {})", deviceId, from, target, issuedBy);
+        return device;
+    }
+
+    // Tên action trùng nhãn hiển thị ở trang Nhật ký (frontend/src/format.ts).
+    private static String auditAction(DeviceStatus target) {
+        return switch (target) {
+            case ACTIVE -> "ACTIVATE_DEVICE";
+            case MAINTENANCE -> "MAINTENANCE_DEVICE";
+            case LOCKED -> "LOCK_DEVICE";
+            case DECOMMISSIONED -> "DECOMMISSION_DEVICE";
+            default -> "CHANGE_DEVICE_STATUS";
+        };
+    }
+
     @Transactional
     public Device getOrAutoRegister(String deviceId, boolean envLike) {
         return deviceRepository.findById(deviceId).orElseGet(() -> {

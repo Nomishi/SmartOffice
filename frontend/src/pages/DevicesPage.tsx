@@ -2,16 +2,16 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Badge, Button, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, Typography, message } from 'antd';
 import type { TableProps } from 'antd';
-import { activateDevice, createDevice, decommissionDevice, getDevices, lockDevice } from '../api/endpoints';
+import { activateDevice, createDevice, decommissionDevice, getDevices, lockDevice, maintenanceDevice } from '../api/endpoints';
 import { errDetails, errMsg } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { can } from '../auth/permissions';
 import DeviceConfigModal from '../components/DeviceConfigModal';
 import { DEVICE_STATUS_COLOR, fmtTime } from '../format';
-import { CAN_ACTIVATE, CAN_DECOMMISSION, CAN_LOCK } from '../lifecycle';
+import { CAN_ACTIVATE, CAN_DECOMMISSION, CAN_LOCK, CAN_MAINTENANCE, activateLabel } from '../lifecycle';
 import type { Device, DeviceStatus, RegisterDeviceInput } from '../types';
 
-type Op = 'activate' | 'lock' | 'decommission';
+type Op = 'activate' | 'maintenance' | 'lock' | 'decommission';
 
 function RegisterDeviceModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [form] = Form.useForm<RegisterDeviceInput>();
@@ -84,7 +84,9 @@ export default function DevicesPage() {
 
   const op = useMutation({
     mutationFn: (v: { id: string; kind: Op }) =>
-      v.kind === 'activate' ? activateDevice(v.id) : v.kind === 'lock' ? lockDevice(v.id) : decommissionDevice(v.id),
+      v.kind === 'activate' ? activateDevice(v.id)
+        : v.kind === 'maintenance' ? maintenanceDevice(v.id)
+          : v.kind === 'lock' ? lockDevice(v.id) : decommissionDevice(v.id),
     onSuccess: (d) => {
       message.success(`${d.deviceId}: ${d.status}`);
       qc.invalidateQueries({ queryKey: ['devices'] });
@@ -117,8 +119,19 @@ export default function DevicesPage() {
           )}
           {can.manageDevices(user?.role) && CAN_ACTIVATE.includes(d.status) && (
             <Button size="small" type="primary" loading={busy(d.deviceId)} onClick={() => op.mutate({ id: d.deviceId, kind: 'activate' })}>
-              Kích hoạt
+              {activateLabel(d.status)}
             </Button>
+          )}
+          {can.manageDevices(user?.role) && CAN_MAINTENANCE.includes(d.status) && (
+            <Popconfirm
+              title="Chuyển thiết bị sang bảo trì?"
+              description="Trong lúc bảo trì thiết bị không nhận lệnh và không bị báo offline. Bấm 'Xong bảo trì' để dùng lại."
+              okText="Bảo trì"
+              cancelText="Hủy"
+              onConfirm={() => op.mutate({ id: d.deviceId, kind: 'maintenance' })}
+            >
+              <Button size="small" loading={busy(d.deviceId)}>Bảo trì</Button>
+            </Popconfirm>
           )}
           {can.manageDevices(user?.role) && CAN_LOCK.includes(d.status) && (
             <Popconfirm
@@ -166,7 +179,8 @@ export default function DevicesPage() {
         scroll={{ x: true }}
       />
       <Typography.Text type="secondary">
-        Vòng đời: REGISTERED → (PROVISIONED) → ACTIVE → LOCKED → DECOMMISSIONED. Thiết bị LOCKED hoặc DECOMMISSIONED không gửi được dữ liệu.
+        Vòng đời: REGISTERED → ACTIVE ⇄ MAINTENANCE / LOCKED (mở khóa được) → DECOMMISSIONED (không hoàn tác, phải khóa trước).
+        OFFLINE và FAULT do hệ thống tự đặt. Thiết bị LOCKED hoặc DECOMMISSIONED không gửi được dữ liệu.
       </Typography.Text>
 
       <RegisterDeviceModal open={registering} onClose={() => setRegistering(false)} />
