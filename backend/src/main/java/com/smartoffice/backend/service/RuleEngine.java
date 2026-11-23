@@ -51,6 +51,7 @@ public class RuleEngine {
 
     private void evaluateSensorFault(Device device, Quality quality) {
         if (quality == Quality.INVALID
+                && device.getStatus() != DeviceStatus.MAINTENANCE   // đang bảo trì: không đổi sang FAULT
                 && device.getInvalidStreak() >= properties.getRules().getSensorFaultInvalidStreak()) {
             device.setStatus(DeviceStatus.FAULT);
             alertService.raise(AlertType.SENSOR_FAULT, AlertSeverity.HIGH, device.getDeviceId(),

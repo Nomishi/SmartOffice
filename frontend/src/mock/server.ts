@@ -4,6 +4,7 @@ import type {
   Actuators, Alert, AuditLog, Command, CommandAction, CommandTarget, ConfigResult, Device, DeviceStatus, DeviceType,
   EnergyBucketSize, LatestTelemetry, Mode, RealtimeEvent, Role, Rule, RuleType,
 } from '../types';
+import { CAN_ACTIVATE, CAN_DECOMMISSION, CAN_LOCK, CAN_MAINTENANCE } from '../lifecycle';
 
 export interface MockRequest {
   method: string;
@@ -81,9 +82,7 @@ const rules: Rule[] = [
 let cfgSeq = 0;
 const pendingConfig = new Set<string>();
 
-// Các trạng thái được phép chuyển (UI chỉ hiện nút hợp lệ; đây là giả định, cần M3 xác nhận)
-const CAN_ACTIVATE: DeviceStatus[] = ['REGISTERED', 'PROVISIONED', 'MAINTENANCE'];
-const CAN_LOCK: DeviceStatus[] = ['ACTIVE', 'OFFLINE', 'FAULT', 'MAINTENANCE'];
+// Các trạng thái được phép chuyển: dùng chung bảng với UI (lifecycle.ts), khớp backend.
 
 const commands: Command[] = [];
 let cmdSeq = 0;
@@ -287,7 +286,7 @@ function describeAction(req: MockRequest): { action: string; target: string | nu
   if (m) return { action: 'SEND_COMMAND', target: `${m[1]}/${String(b.target ?? '')}` };
   m = /^\/api\/devices\/([^/]+)\/mode$/.exec(path);
   if (m) return { action: 'SET_MODE', target: m[1] };
-  m = /^\/api\/devices\/([^/]+)\/(activate|lock|decommission)$/.exec(path);
+  m = /^\/api\/devices\/([^/]+)\/(activate|maintenance|lock|decommission)$/.exec(path);
   if (m) return { action: `${m[2].toUpperCase()}_DEVICE`, target: m[1] };
   m = /^\/api\/devices\/([^/]+)\/config$/.exec(path);
   if (m) return { action: 'UPDATE_CONFIG', target: m[1] };
@@ -570,23 +569,26 @@ async function route(req: MockRequest): Promise<MockResponse> {
     return { status: 201, body: toDevice(nd) };
   }
 
-  m = /^\/api\/devices\/([^/]+)\/(activate|lock|decommission)$/.exec(path);
+  m = /^\/api\/devices\/([^/]+)\/(activate|maintenance|lock|decommission)$/.exec(path);
   if (m && method === 'POST') {
     if (user.role !== 'ADMIN') return forbidden();
     const d = devices[m[1]];
     if (!d) return fail(404, 'NOT_FOUND', 'Không tìm thấy thiết bị');
     const op = m[2];
     if (op === 'activate') {
-      if (!CAN_ACTIVATE.includes(d.status)) return fail(409, 'INVALID_STATE', `Không thể kích hoạt thiết bị đang ở trạng thái ${d.status}`);
+      if (!CAN_ACTIVATE.includes(d.status)) return fail(409, 'INVALID_TRANSITION', `Không thể kích hoạt thiết bị đang ở trạng thái ${d.status}`);
       d.status = 'ACTIVE';
       d.online = true;
       d.lastSeenAt = now();
+    } else if (op === 'maintenance') {
+      if (!CAN_MAINTENANCE.includes(d.status)) return fail(409, 'INVALID_TRANSITION', `Không thể chuyển sang bảo trì từ trạng thái ${d.status}`);
+      d.status = 'MAINTENANCE';
     } else if (op === 'lock') {
-      if (!CAN_LOCK.includes(d.status)) return fail(409, 'INVALID_STATE', `Không thể khóa thiết bị đang ở trạng thái ${d.status}`);
+      if (!CAN_LOCK.includes(d.status)) return fail(409, 'INVALID_TRANSITION', `Không thể khóa thiết bị đang ở trạng thái ${d.status}`);
       d.status = 'LOCKED';
       d.online = false; // thiết bị bị khóa không gửi được dữ liệu (Contract mục 11)
     } else {
-      if (d.status !== 'LOCKED') return fail(409, 'INVALID_STATE', 'Chỉ thiết bị đã khóa mới được decommission');
+      if (!CAN_DECOMMISSION.includes(d.status)) return fail(409, 'INVALID_TRANSITION', 'Chỉ thiết bị đã khóa (hoặc chưa từng dùng) mới được decommission');
       d.status = 'DECOMMISSIONED';
       d.online = false;
     }

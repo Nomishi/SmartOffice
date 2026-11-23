@@ -58,6 +58,7 @@ export const getEnergy = (id: string, p: { from: string; to: string; bucket?: En
 // RegisterDeviceInput và các thao tác vòng đời trả về Device đã cập nhật.
 export const createDevice = (body: RegisterDeviceInput) => request<Device>('POST', '/api/devices', { body });
 export const activateDevice = (id: string) => request<Device>('POST', `/api/devices/${id}/activate`);
+export const maintenanceDevice = (id: string) => request<Device>('POST', `/api/devices/${id}/maintenance`);
 export const lockDevice = (id: string) => request<Device>('POST', `/api/devices/${id}/lock`);
 export const decommissionDevice = (id: string) => request<Device>('POST', `/api/devices/${id}/decommission`);
 

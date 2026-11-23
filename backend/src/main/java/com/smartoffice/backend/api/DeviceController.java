@@ -163,6 +163,12 @@ public class DeviceController {
         return changeStatus(id, DeviceStatus.LOCKED);
     }
 
+    @PostMapping("/{id}/maintenance")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public Map<String, Object> maintenance(@PathVariable String id) {
+        return changeStatus(id, DeviceStatus.MAINTENANCE);
+    }
+
     @PostMapping("/{id}/decommission")
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public Map<String, Object> decommission(@PathVariable String id) {
@@ -170,11 +176,9 @@ public class DeviceController {
     }
 
     private Map<String, Object> changeStatus(String id, DeviceStatus status) {
-        Device device = deviceService.getRequired(id);
-        device.setStatus(status);
-        device.setUpdatedAt(Instant.now());
-        deviceService.save(device);
-        return Map.of("deviceId", id, "status", status);
+        String issuedBy = com.smartoffice.backend.security.SecurityUtils.getIssuedBy();
+        Device device = deviceService.changeStatus(id, status, issuedBy);
+        return Map.of("deviceId", id, "status", device.getStatus());
     }
 
     private Pageable pageable(int page, int size, String sort) {

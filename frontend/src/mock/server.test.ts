@@ -112,8 +112,8 @@ describe('vòng đời thiết bị (test bảo mật bắt buộc số 2)', () 
   });
 
   it('chuyển trạng thái sai bị 409; đúng thứ tự thì qua; LOCKED và DECOMMISSIONED chặn lệnh', async () => {
-    expect((await call(ADMIN, 'POST', '/api/devices/office-ctrl-77/decommission')).status).toBe(409); // chưa khóa
     expect((await call(ADMIN, 'POST', '/api/devices/office-ctrl-77/activate')).body).toMatchObject({ status: 'ACTIVE', online: true });
+    expect((await call(ADMIN, 'POST', '/api/devices/office-ctrl-77/decommission')).status).toBe(409); // đang dùng: phải khóa trước
     expect((await call(OPERATOR, 'POST', '/api/devices/office-ctrl-77/lock')).status).toBe(403);
     expect((await call(ADMIN, 'POST', '/api/devices/office-ctrl-77/lock')).body).toMatchObject({ status: 'LOCKED', online: false });
     const locked = await call(OPERATOR, 'POST', '/api/devices/office-ctrl-77/commands', { target: 'light1', action: 'ON' });
@@ -122,6 +122,16 @@ describe('vòng đời thiết bị (test bảo mật bắt buộc số 2)', () 
     const gone = await call(OPERATOR, 'POST', '/api/devices/office-ctrl-77/commands', { target: 'light1', action: 'ON' });
     expect(err(gone).code).toBe('DEVICE_DECOMMISSIONED');
     expect((await call(ADMIN, 'POST', '/api/devices/office-ctrl-77/activate')).status).toBe(409); // không hoàn tác
+  });
+
+  it('mở khóa và bảo trì: LOCKED -> ACTIVE, ACTIVE -> MAINTENANCE -> ACTIVE; sai luồng trả INVALID_TRANSITION', async () => {
+    const id = 'office-env-01';
+    expect((await call(ADMIN, 'POST', `/api/devices/${id}/lock`)).body).toMatchObject({ status: 'LOCKED' });
+    expect((await call(ADMIN, 'POST', `/api/devices/${id}/activate`)).body).toMatchObject({ status: 'ACTIVE' });
+    expect((await call(OPERATOR, 'POST', `/api/devices/${id}/maintenance`)).status).toBe(403);
+    expect((await call(ADMIN, 'POST', `/api/devices/${id}/maintenance`)).body).toMatchObject({ status: 'MAINTENANCE' });
+    expect(err(await call(ADMIN, 'POST', `/api/devices/${id}/decommission`)).code).toBe('INVALID_TRANSITION');
+    expect((await call(ADMIN, 'POST', `/api/devices/${id}/activate`)).body).toMatchObject({ status: 'ACTIVE' });
   });
 });
 

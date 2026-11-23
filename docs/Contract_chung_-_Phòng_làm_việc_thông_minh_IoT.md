@@ -252,7 +252,20 @@ Quy tắc bắt buộc:
 | Mode | `AUTO`, `MANUAL` |
 | Quality | `VALID`, `SUSPECT`, `INVALID` |
 
-Lifecycle thiết bị: `REGISTERED → PROVISIONED → ACTIVE ⇄ OFFLINE / FAULT / MAINTENANCE`, và `ACTIVE → LOCKED → DECOMMISSIONED`. (`PROVISIONED`, `FAULT` lấy từ proposal, nhóm xác nhận có giữ không. Đề xuất giữ vì đề bài dùng đúng các trạng thái này làm ví dụ.)
+Lifecycle thiết bị: `REGISTERED → PROVISIONED → ACTIVE ⇄ OFFLINE / FAULT / MAINTENANCE`, và `ACTIVE → LOCKED → DECOMMISSIONED`.
+
+Chuyển trạng thái do Admin gọi (backend kiểm tra, sai luồng → `409 INVALID_TRANSITION`; gọi lặp cùng trạng thái → 200, không đổi gì):
+
+| API | Trạng thái đích | Được phép từ |
+| --- | --- | --- |
+| `/activate` | `ACTIVE` | `REGISTERED`, `PROVISIONED`, `MAINTENANCE` (xong bảo trì), `LOCKED` (mở khóa) |
+| `/maintenance` | `MAINTENANCE` | `ACTIVE`, `OFFLINE`, `FAULT` |
+| `/lock` | `LOCKED` | `ACTIVE`, `OFFLINE`, `FAULT`, `MAINTENANCE` |
+| `/decommission` | `DECOMMISSIONED` (không hoàn tác) | `LOCKED`, hoặc `REGISTERED` / `PROVISIONED` (đăng ký nhưng chưa dùng) |
+
+`OFFLINE` và `FAULT` do hệ thống tự đặt. Thiết bị `MAINTENANCE` không nhận lệnh, không bị đánh `OFFLINE` và không chuyển sang `FAULT`.
+
+Chưa làm: chưa có API chuyển sang `PROVISIONED` (credential MQTT vẫn thêm tay vào `MQTT_USERS`), và decommission chưa tự thu hồi credential MQTT. (`PROVISIONED`, `FAULT` lấy từ proposal, nhóm xác nhận có giữ không. Đề xuất giữ vì đề bài dùng đúng các trạng thái này làm ví dụ.)
 
 Điều kiện sinh cảnh báo (ngưỡng cấu hình được, đo thực tế rồi chốt):
 
@@ -277,7 +290,8 @@ Lifecycle thiết bị: `REGISTERED → PROVISIONED → ACTIVE ⇄ OFFLINE / FAU
 | POST | `/api/users` | Admin | tạo user |
 | GET | `/api/devices` | user | danh sách thiết bị |
 | POST | `/api/devices` | Admin | đăng ký thiết bị |
-| POST | `/api/devices/{id}/activate` | Admin | kích hoạt |
+| POST | `/api/devices/{id}/activate` | Admin | kích hoạt; cũng dùng để mở khóa (`LOCKED`) và kết thúc bảo trì (`MAINTENANCE`) |
+| POST | `/api/devices/{id}/maintenance` | Admin | chuyển sang bảo trì |
 | POST | `/api/devices/{id}/lock` | Admin | khóa |
 | POST | `/api/devices/{id}/decommission` | Admin | ngừng sử dụng |
 | GET | `/api/devices/{id}/status` | user | trạng thái hiện tại |
@@ -459,6 +473,7 @@ Xem cấu trúc `Rule` đầy đủ ở mục 9.1.
 | 409 | `DEVICE_LOCKED` | Thiết bị `LOCKED` |
 | 409 | `DEVICE_DECOMMISSIONED` | Thiết bị `DECOMMISSIONED` |
 | 409 | `DEVICE_EXISTS` | Đăng ký trùng `deviceId` |
+| 409 | `INVALID_TRANSITION` | Chuyển trạng thái vòng đời sai luồng (xem mục 7) |
 | 409 | `COMMAND_DUPLICATE` | Cùng `Idempotency-Key` nhưng body khác (target/action khác) |
 | 409 | `CONFIG_CONFLICT` | Đang có config `PENDING` chưa ACK mà gửi config mới |
 | 429 | `RATE_LIMITED` | Quá số request cho phép |
