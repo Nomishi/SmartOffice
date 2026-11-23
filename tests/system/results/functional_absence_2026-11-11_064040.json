@@ -1,0 +1,17 @@
+{
+  "suite": "functional_absence",
+  "startedAt": "2026-11-10T23:40:40Z",
+  "finishedAt": "2026-11-10T23:44:56Z",
+  "api": "http://localhost:3000/api",
+  "broker": "127.0.0.1:1883",
+  "results": [
+    {
+      "id": "CN-08",
+      "title": "Tự động tắt tải khi phòng trống",
+      "verdict": "PASS",
+      "expected": "presence=false ≥ 1 phút, AUTO → lệnh OFF issuedBy=automation",
+      "actual": "radar báo vắng từ giây 0; đèn tắt ở giây 76 bởi automation (CMD-0128)",
+      "note": "automation chỉ dùng bản tin quality VALID (MQ-135 làm nóng 3 phút sau khi Node A khởi động thì bản tin là SUSPECT)"
+    }
+  ]
+}

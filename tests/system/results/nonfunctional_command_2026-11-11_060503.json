@@ -1,0 +1,70 @@
+{
+  "suite": "nonfunctional_command",
+  "startedAt": "2026-11-10T23:05:03Z",
+  "finishedAt": "2026-11-10T23:05:16Z",
+  "api": "http://localhost:3000/api",
+  "broker": "127.0.0.1:1883",
+  "results": [
+    {
+      "id": "PCN-02",
+      "title": "Độ trễ lệnh → ACK (NFR-02)",
+      "verdict": "PASS",
+      "expected": "< 1 s cho đèn/quạt/còi; cửa < 5 s",
+      "actual": "đèn, 20 lệnh qua REST: khứ hồi n=20, trung bình 169 ms, trung vị 163, p95 185, lớn nhất 186; thiết bị xử lý n=20, trung bình 2 ms, trung vị 2, p95 2, lớn nhất 2; lỗi 0. Cửa: OPEN SUCCESS khứ hồi 185 ms (thiết bị 52 ms); CLOSE FAILED khứ hồi 2749 ms (thiết bị 2532 ms)",
+      "note": ""
+    }
+  ],
+  "measurements": {
+    "PCN-02": {
+      "roundTripMs": [
+        162.52770000210148,
+        171.14869999932125,
+        184.73429999721702,
+        162.02930000144988,
+        185.18869999752496,
+        182.30079999921145,
+        161.29709999950137,
+        161.60880000097677,
+        162.70470000017667,
+        186.19729999772971,
+        181.02169999838225,
+        164.25249999883818,
+        161.6146000014851,
+        177.96349999844097,
+        162.62360000109766,
+        161.87799999897834,
+        174.51109999819892,
+        161.98509999958333,
+        161.64829999979702,
+        162.6655000000028
+      ],
+      "deviceLatencyMs": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "failed": 0,
+      "door": [
+        "OPEN SUCCESS khứ hồi 185 ms (thiết bị 52 ms)",
+        "CLOSE FAILED khứ hồi 2749 ms (thiết bị 2532 ms)"
+      ]
+    }
+  }
+}

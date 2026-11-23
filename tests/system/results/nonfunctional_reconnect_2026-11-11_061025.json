@@ -1,0 +1,30 @@
+{
+  "suite": "nonfunctional_reconnect",
+  "startedAt": "2026-11-10T23:10:25Z",
+  "finishedAt": "2026-11-10T23:12:19Z",
+  "api": "http://localhost:3000/api",
+  "broker": "127.0.0.1:1883",
+  "results": [
+    {
+      "id": "PCN-04",
+      "title": "Phục hồi sau khi broker khởi động lại (NFR-04)",
+      "verdict": "FAIL",
+      "expected": "< 30 s, đầu-cuối tới backend",
+      "actual": "thiết bị gửi lại: office-ctrl-01 0.5 s, office-env-01 0.6 s; backend nhận lại dữ liệu: office-env-01 112 s, office-ctrl-01 112 s",
+      "note": "tính từ lúc broker chạy lại; phần chậm nằm ở client MQTT của backend (Paho tự kết nối lại với thời gian chờ tăng dần)"
+    }
+  ],
+  "measurements": {
+    "PCN-04": {
+      "brokerRestartSec": 0.6155083179473877,
+      "deviceBackSec": {
+        "office-ctrl-01": 0.5089321136474609,
+        "office-env-01": 0.6407053470611572
+      },
+      "backendBackSec": {
+        "office-env-01": 112.0921471118927,
+        "office-ctrl-01": 112.09880805015564
+      }
+    }
+  }
+}

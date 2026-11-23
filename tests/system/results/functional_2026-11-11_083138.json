@@ -1,0 +1,153 @@
+{
+  "suite": "functional",
+  "startedAt": "2026-11-11T01:31:38Z",
+  "finishedAt": "2026-11-11T01:35:00Z",
+  "api": "http://localhost:3000/api",
+  "broker": "127.0.0.1:1883",
+  "results": [
+    {
+      "id": "CN-01",
+      "title": "Đăng nhập",
+      "verdict": "PASS",
+      "expected": "Sai mật khẩu → 401; đúng → trả JWT",
+      "actual": "sai mật khẩu → HTTP 401; đúng → JWT 248 ký tự",
+      "note": ""
+    },
+    {
+      "id": "CN-16",
+      "title": "API từ chối token thiếu / sai (bảo mật)",
+      "verdict": "PASS",
+      "expected": "Không token, token rác, token bị sửa chữ ký → 401",
+      "actual": "không token 401, token rác 401, sửa chữ ký 401",
+      "note": ""
+    },
+    {
+      "id": "CN-02",
+      "title": "Phân quyền Viewer (bảo mật)",
+      "verdict": "PASS",
+      "expected": "Viewer gửi lệnh / sửa rule → 403, thiết bị không đổi",
+      "actual": "gửi lệnh → 403, sửa rule → 403, light1 OFF → OFF",
+      "note": ""
+    },
+    {
+      "id": "CN-03",
+      "title": "Telemetry Node A",
+      "verdict": "FAIL",
+      "expected": "Thiết bị gửi telemetry 5 s/lần, backend lưu",
+      "actual": "không nhận được telemetry trong 15 s",
+      "note": ""
+    },
+    {
+      "id": "CN-04",
+      "title": "Telemetry Node B",
+      "verdict": "FAIL",
+      "expected": "Thiết bị gửi telemetry 5 s/lần, backend lưu",
+      "actual": "không nhận được telemetry trong 15 s",
+      "note": ""
+    },
+    {
+      "id": "CN-03b",
+      "title": "Tra cứu lịch sử + báo cáo năng lượng",
+      "verdict": "PASS",
+      "expected": "API lịch sử 10 phút trả dữ liệu; API năng lượng trả 200",
+      "actual": "lịch sử 200 (23 bản ghi/trang), năng lượng 200",
+      "note": ""
+    },
+    {
+      "id": "CN-05",
+      "title": "Điều khiển đèn / quạt / còi",
+      "verdict": "FAIL",
+      "expected": "ACK SUCCESS, trạng thái actuator đổi đúng",
+      "actual": "light1 ON: 409, thiết bị None ms, khứ hồi 17 ms, light1CurrentMa=0; light1 OFF: 409, thiết bị None ms, khứ hồi 28 ms; fan1 ON: 409, thiết bị None ms, khứ hồi 13 ms, fan1CurrentMa=0; fan1 OFF: SUCCESS, thiết bị 2 ms, khứ hồi 339 ms; buzzer1 ON: SUCCESS, thiết bị 2 ms, khứ hồi 1402 ms; buzzer1 OFF: SUCCESS, thiết bị 597 ms, khứ hồi 1243 ms",
+      "note": ""
+    },
+    {
+      "id": "CN-06",
+      "title": "Điều khiển cửa (servo + công tắc từ)",
+      "verdict": "FAIL",
+      "expected": "OPEN/CLOSE đều SUCCESS, trạng thái cửa theo công tắc từ, < 5 s",
+      "actual": "OPEN → FAILED (2698 ms); CLOSE → SUCCESS (738 ms); trạng thái cuối CLOSED",
+      "note": "lệnh FAILED khi công tắc từ không xác nhận là đúng thiết kế; cần chỉnh nam châm"
+    },
+    {
+      "id": "CN-07",
+      "title": "Sinh và xử lý cảnh báo TEMP_HIGH",
+      "verdict": "FAIL",
+      "expected": "Hạ ngưỡng dưới nhiệt độ thật → alert OPEN; Operator xác nhận được; trả ngưỡng → alert đóng",
+      "actual": "không có alert sau 40 s (nhiệt độ 23.56, ngưỡng 21)",
+      "note": ""
+    },
+    {
+      "id": "CN-08",
+      "title": "Tự động tắt tải khi phòng trống",
+      "verdict": "MANUAL",
+      "expected": "presence=false đủ X phút, mode AUTO → backend gửi OFF; MANUAL không bị ghi đè",
+      "actual": "chưa chạy: cần rời khỏi tầm radar; chạy lại với --absence",
+      "note": ""
+    },
+    {
+      "id": "CN-11",
+      "title": "Lệnh trùng commandId (NFR-05)",
+      "verdict": "PASS",
+      "expected": "Gửi lại commandId cũ → không thực thi lại, trả lại đúng ACK cũ",
+      "actual": "ACK lần 2 giống hệt lần 1 ({'commandId': 'CMD-DUP-37f1bf', 'target': 'light1', 'status': 'SUCCESS', 'state': 'ON', 'latencyMs': 2}); đèn sau khi gửi lại lệnh ON cũ = OFF",
+      "note": ""
+    },
+    {
+      "id": "CN-12",
+      "title": "API trợ lý AI",
+      "verdict": "PASS",
+      "expected": "AI tắt → 503 AI_UNAVAILABLE; bật → 200",
+      "actual": "HTTP 503 AI_UNAVAILABLE",
+      "note": ""
+    },
+    {
+      "id": "CN-13",
+      "title": "Thay đổi cấu hình thiết bị từ xa",
+      "verdict": "FAIL",
+      "expected": "Config hợp lệ → ACK SUCCESS và áp dụng; sai dải → API 400, thiết bị FAILED",
+      "actual": "PUT chu kỳ 7 s → None ACK không có; khoảng cách telemetry sau đổi: [] s (trung vị None s); API giá trị sai 99999 → 400 VALIDATION_ERROR; gửi thẳng góc servo 999 → thiết bị trả FAILED",
+      "note": ""
+    },
+    {
+      "id": "CN-14",
+      "title": "Khóa thiết bị: không còn nhận dữ liệu / lệnh (bảo mật)",
+      "verdict": "PASS",
+      "expected": "LOCKED → lệnh bị 409, telemetry bị bỏ qua; kích hoạt lại → hoạt động bình thường",
+      "actual": "lock 200; lệnh khi khóa → 409 DEVICE_LOCKED; telemetry trong 12 s khóa không được lưu; sau activate telemetry tiếp tục, lệnh → 200",
+      "note": ""
+    },
+    {
+      "id": "CN-15",
+      "title": "Broker từ chối truy cập sai (bảo mật)",
+      "verdict": "PASS",
+      "expected": "Node A ghi sang topic Node B bị chặn; sai mật khẩu bị từ chối",
+      "actual": "ghi chéo topic: bị chặn; subscribe command của Node B: ['Granted QoS 1']; sai mật khẩu → Not authorized",
+      "note": "Mosquitto có thể vẫn trả SUBACK nhưng không chuyển bản tin; xem ghi chú ACL"
+    },
+    {
+      "id": "CN-17",
+      "title": "Đăng ký, kích hoạt, ngừng sử dụng thiết bị",
+      "verdict": "PASS",
+      "expected": "Admin: REGISTERED → ACTIVE → DECOMMISSIONED; Operator không được đăng ký",
+      "actual": "test-device-c8a629: REGISTERED → ACTIVE → DECOMMISSIONED; Operator đăng ký → 403",
+      "note": "thiết bị thử để lại ở trạng thái DECOMMISSIONED"
+    },
+    {
+      "id": "CN-09",
+      "title": "Phát hiện thiết bị offline",
+      "verdict": "PASS",
+      "expected": "Ngắt thiết bị → LWT/OFFLINE ≤ 90 s, alert DEVICE_OFFLINE",
+      "actual": "OFFLINE sau 30 s, alert có",
+      "note": "ngắt bằng cách giữ ESP32 ở trạng thái reset qua cổng USB"
+    },
+    {
+      "id": "CN-10",
+      "title": "Phục hồi sau mất kết nối",
+      "verdict": "PASS",
+      "expected": "Thiết bị tự kết nối lại, ACTIVE, alert tự đóng (NFR-04 < 30 s)",
+      "actual": "ACTIVE lại sau 6 s tính từ lúc thả reset, alert mở còn 0",
+      "note": ""
+    }
+  ]
+}

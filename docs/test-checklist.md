@@ -160,8 +160,6 @@ POST lại cùng deviceId → 409 DEVICE_EXISTS
 - `deployment` full stack: backend + frontend + PostgreSQL + Mosquitto (ACL) đều healthy.
 - Frontend `frontend`: `npm ci`, `npm test` → **49 test pass**, `npm run build` OK,
   Docker image build OK; nginx `3000` proxy `/api` sang backend OK, SSE OK.
-- Simulator `tests/simulator/node_b_simulator.py` qua broker Docker có auth/ACL:
-  command `light1 ON` + `door1 OPEN` → ACK `SUCCESS`, actuator đổi `light1=ON`, `door1=OPEN`.
 - AI API:
   - `AI_ENABLED=false` → `503 AI_UNAVAILABLE`.
   - Giả lập OpenAI-compatible endpoint + `AI_ENABLED=true` → `200`, trả answer/model.

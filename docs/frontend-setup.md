@@ -136,7 +136,7 @@ Endpoint backend: xem [`frontend-integration.md`](frontend-integration.md) và S
 | 401 | Token thiếu/hết hạn; login lại |
 | 403 | Viewer gọi API điều khiển; dùng operator/admin |
 | CORS | Dev dùng Vite proxy; Docker dùng nginx cùng origin. Nếu gọi thẳng 8080, thêm origin vào `CORS_ALLOWED_ORIGINS` |
-| 409 `DEVICE_OFFLINE` | Chưa có telemetry/status; chạy simulator hoặc mock |
+| 409 `DEVICE_OFFLINE` | Chưa có telemetry/status; bật ESP32 thật hoặc chạy mock |
 | 409 `DEVICE_NOT_ACTIVE` | Device mới `REGISTERED`; gọi `/activate` |
 | SSE 401 | Token hết hạn; login lại |
 | `localhost:1883` nối nhầm Windows Mosquitto | Dùng IP LAN của PC hoặc tắt service Mosquitto |

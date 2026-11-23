@@ -11,7 +11,7 @@ cd SmartOffice
 git checkout main
 ```
 
-> `main` chưa có backend P0, frontend, infra hay simulator mới nhất.
+> `main` chưa có backend P0, frontend, infra hay mock thiết bị mới nhất.
 > Nhánh chính thức sau khi merge là **`main`**.
 
 ## 1. Cần cài gì?
@@ -23,7 +23,7 @@ git checkout main
 Chỉ cần thêm khi làm ngoài Docker:
 
 - **Node.js 20+** — chạy frontend dev
-- **Python 3.10+ + paho-mqtt** — chạy simulator M2
+- **Python 3.10+ + paho-mqtt** — chạy mock thiết bị (`tests/mqtt`) và kiểm thử hệ thống (`tests/system`)
 - **Java 17 + Maven** — chạy backend local
 
 ## 2. Cổng cần trống
@@ -122,7 +122,7 @@ Trong UI:
 
 1. Login `operator1`.
 2. Dashboard hiển thị 2 node seed.
-3. Nếu chưa có telemetry, chạy simulator ở mục 7.
+3. Nếu chưa có telemetry, bật ESP32 thật hoặc chạy mock ở mục 7.
 
 ## 6. Chạy frontend dev (không Docker)
 
@@ -151,27 +151,7 @@ VITE_USE_MOCK=true
 
 Tài khoản mock: `admin/admin123`, `operator1/operator123`, `viewer1/viewer123`.
 
-## 7. Chạy simulator M2
-
-Simulator Node B nằm ở `tests/simulator/node_b_simulator.py`.
-
-Với full stack `deployment` (auth/ACL):
-
-```powershell
-python -m pip install "paho-mqtt>=2.0,<3"
-
-$env:MQTT_HOST = "192.168.10.205"       # IP LAN PC, KHÔNG dùng localhost nếu có Mosquitto Windows
-$env:MQTT_PORT = "1883"
-$env:MQTT_USERNAME = "office-ctrl-01"
-$env:MQTT_PASSWORD = "<mật khẩu office-ctrl-01 trong deployment/.env>"
-$env:PYTHONIOENCODING = "utf-8"
-
-python tests/simulator/node_b_simulator.py
-```
-
-Simulator sẽ publish status retained, telemetry 5s, heartbeat 30s; nhận command và trả ACK.
-
-## 8. Chạy simulator M1/M2 nâng cao
+## 7. Chạy mock Node A + B
 
 `tests/mqtt/mock_publisher.py` giả lập cả Node A + B, có scenario:
 
@@ -212,6 +192,6 @@ docker compose --profile ui down -v    # xoá luôn DB/MQTT volume
 | Mosquitto restart liên tục | Kiểm tra `MQTT_USERS` đúng format, không có dấu phẩy/space/$ |
 | Backend không start | Thiếu `JWT_SECRET` ≥ 32 ký tự hoặc DB chưa healthy |
 | Login 401 | Sai mật khẩu hoặc chưa seed user (`SEED_DEV_USERS=true`) |
-| 409 `DEVICE_OFFLINE` | Chưa có telemetry/status; chạy simulator |
+| 409 `DEVICE_OFFLINE` | Chưa có telemetry/status; bật ESP32 thật hoặc chạy mock |
 | Frontend 3000 trắng | `docker compose ps` xem frontend/backend healthy; xem log nginx |
 | SSE không nhận | Token hết hạn; login lại; kiểm tra nginx proxy `/api/stream` |

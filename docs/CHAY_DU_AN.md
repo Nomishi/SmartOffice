@@ -1,6 +1,6 @@
 # Chạy toàn bộ dự án SmartOffice
 
-Tài liệu này là bản hướng dẫn độc lập để chạy **toàn bộ hệ thống** từ đầu: PostgreSQL, Mosquitto, backend Spring Boot, frontend React, simulator và AI.
+Tài liệu này là bản hướng dẫn độc lập để chạy **toàn bộ hệ thống** từ đầu: PostgreSQL, Mosquitto, backend Spring Boot, frontend React, mock thiết bị và AI.
 
 ---
 
@@ -22,7 +22,7 @@ Cần thêm:
 
 - Java 17 + Maven
 - Node.js 20+
-- Python 3.10+ nếu chạy simulator
+- Python 3.10+ nếu chạy mock thiết bị hoặc kiểm thử hệ thống (`tests/`)
 
 ---
 
@@ -36,7 +36,7 @@ SmartOffice/
 ├── deployment/    Docker Compose, Mosquitto config
 ├── firmware/      ESP32 Node A / Node B
 ├── hardware/      Sơ đồ, linh kiện, đấu dây
-├── tests/         Simulator Node B, mock publisher
+├── tests/         Kiểm thử hệ thống trên thiết bị thật, mock publisher, test ACL
 └── docs/          Tài liệu, contract, báo cáo
 ```
 
@@ -349,14 +349,7 @@ mvn spring-boot:run
 
 ---
 
-## 11. Chạy simulator thủ công
-
-### Node B
-
-```powershell
-cd D:\project\SmartOffice
-python tests\simulator\node_b_simulator.py
-```
+## 11. Chạy mock thiết bị (không cần ESP32)
 
 ### Node A + B theo kịch bản
 
@@ -637,7 +630,7 @@ http://localhost:8080/swagger-ui/index.html
 | Nginx proxy REST + SSE | Có |
 | Swagger/OpenAPI | Có |
 | AI provider tùy chọn | Có |
-| Simulator Node A/B | Có |
+| Mock Node A/B (`tests/mqtt/mock_publisher.py`) | Có |
 
 ### 16.9. Phần cứng / firmware
 
