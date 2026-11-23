@@ -188,6 +188,8 @@ Frontend chỉ gọi backend, không cầm API key. Chi tiết: [`docs/ai-api.md
 
 | File | Nội dung |
 | --- | --- |
+| [`docs/BAO_CAO_DO_AN.pdf`](docs/BAO_CAO_DO_AN.pdf) | Báo cáo đồ án (PDF) |
+| [`docs/SLIDE_SmartOffice.pptx`](docs/SLIDE_SmartOffice.pptx) | Slide thuyết trình |
 | [`docs/CHAY_DU_AN.md`](docs/CHAY_DU_AN.md) | Hướng dẫn chạy toàn bộ dự án |
 | [`docs/SETUP.md`](docs/SETUP.md) | Setup từ đầu |
 | [`docs/Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md`](docs/Contract_chung_-_Phòng_làm_việc_thông_minh_IoT.md) | Contract v1.5 |
