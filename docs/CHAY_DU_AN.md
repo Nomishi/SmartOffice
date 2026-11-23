@@ -236,8 +236,8 @@ Backend đã có rule tự động:
 ```text
 TEMP_HIGH
 → tạo alert
-→ gửi buzzer1 ALARM
-→ còi hú
+→ gửi buzzer1 ON
+→ còi kêu ngắt quãng, tự tắt sau 120 giây
 ```
 
 Cấu hình:
@@ -264,7 +264,7 @@ BUZZER_COOLDOWN_SECONDS=60
 5. Kiểm tra:
 
 - Alert `TEMP_HIGH` xuất hiện.
-- Command `buzzer1 / ALARM` xuất hiện.
+- Command `buzzer1 / ON` xuất hiện.
 - Log backend có dòng:
 
 ```text
@@ -283,13 +283,7 @@ BUZZER_COOLDOWN_SECONDS=0
 
 rồi restart backend.
 
-- Còi thật chỉ kêu khi firmware Node B xử lý action `ALARM`.
-- Module firmware có sẵn:
-
-```text
-firmware/node-b/buzzer.h
-firmware/node-b/buzzer.cpp
-```
+- Còi chỉ nhận `ON`/`OFF`. `ON`: còi thụ động kêu 400 ms / nghỉ 400 ms, firmware tự tắt sau `BUZZER_MAX_ON_SEC` (120 s) trong `firmware/node-b/config.h`.
 
 ---
 
@@ -542,8 +536,6 @@ Tài liệu này thiên về **cách chạy**. Bảng dưới đây tóm tắt t
 | Bật/tắt đèn, quạt | Có | `light1`, `fan1` |
 | Điều khiển cửa mô hình | Có | `door1 OPEN/CLOSE` |
 | Còi ON/OFF | Có | `buzzer1 ON/OFF` |
-| Còi BEEP / BEEP2 / BEEP_LONG | Có | Kêu ngắn, 2 tiếng, dài |
-| Còi ALARM | Có | Hú lặp, tự tắt theo firmware |
 | Tự kêu khi có cảnh báo | Có | TEMP_HIGH, AIR_BAD, DOOR_LEFT_OPEN, ENERGY_WASTE |
 | Chống hú liên tục | Có | Cooldown 60 giây |
 | ACK / timeout / retry | Có | Command có trạng thái PENDING → SUCCESS/FAILED/TIMEOUT |
@@ -638,7 +630,6 @@ http://localhost:8080/swagger-ui/index.html
 |---|---|
 | Firmware Node A | Có trong repo |
 | Firmware Node B | Đang hoàn thiện, main có thể thay đổi |
-| Module còi `buzzer.cpp` | Có |
 | Sơ đồ đấu dây | Có trong `hardware/` |
 | Đo công suất INA219 | Có thiết kế, cần hiệu chuẩn |
 | OTA | Chưa có |

@@ -65,7 +65,8 @@ public class BuzzerAlertTrigger {
         }
 
         try {
-            commandService.createAutomation(control.getDeviceId(), "buzzer1", "ALARM");
+            // Firmware Node B chỉ nhận ON/OFF: ON = kêu ngắt quãng, tự tắt sau BUZZER_MAX_ON_SEC (120 s).
+            commandService.createAutomation(control.getDeviceId(), "buzzer1", "ON");
             lastTriggered.put(control.getDeviceId(), now);
             log.info("Kích còi {} do alert {} ({})", control.getDeviceId(), alert.getType(), alert.getSeverity());
         } catch (Exception ex) {
